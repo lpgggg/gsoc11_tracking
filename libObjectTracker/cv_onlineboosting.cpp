@@ -56,7 +56,7 @@
                                 COPYRIGHT NOTICE
                                 ----------------
 
-  The code has been derived from the following on-line boost trackers library:
+  The code has been derived from the following on-line boosting trackers library:
   (http://www.vision.ee.ethz.ch/boostingTrackers/).
 
 /****************************************************************************************/
