@@ -49,13 +49,21 @@ namespace cv
   {
     // By default, use online boosting
     algorithm_ = CV_ONLINEBOOSTING;
+
+    // Default number of classifiers/selectors for boosting algorithms
+    num_classifiers_ = 100;
+
+    // Default search region parameters for boosting algorithms
+    overlap_ = 0.99f;
+    search_factor_ = 2.0f;
   }
 
   //---------------------------------------------------------------------------
-  ObjectTrackerParams::ObjectTrackerParams(const int algorithm)
+  ObjectTrackerParams::ObjectTrackerParams(const int algorithm, const int num_classifiers,
+    const float overlap, const float search_factor)
   {
     // Make sure a valid algorithm flag is used before storing it
-    if ( (algorithm != CV_ONLINEBOOSTING) && (algorithm != CV_ONLINEMIL) && (algorithm != CV_LINEMOD) )
+    if ( (algorithm != CV_ONLINEBOOSTING) && (algorithm != CV_SEMIONLINEBOOSTING) && (algorithm != CV_ONLINEMIL) && (algorithm != CV_LINEMOD) )
     {
       // Use CV_ERROR?
       std::cerr << "ObjectTrackerParams::ObjectTrackerParams(...) -- ERROR!  Invalid algorithm choice.\n";
@@ -63,6 +71,13 @@ namespace cv
     }
     // Store it
     algorithm_ = algorithm;
+
+    // Store the number of weak classifiers (any error checking done here?)
+    num_classifiers_ = num_classifiers;
+
+    // Store information about the searching 
+    overlap_ = overlap;
+    search_factor_ = search_factor;
   }
 
   //
@@ -71,12 +86,18 @@ namespace cv
 
   //---------------------------------------------------------------------------
   TrackingAlgorithm::TrackingAlgorithm()
+    : image_(NULL)
   {
   }
 
   //---------------------------------------------------------------------------
   TrackingAlgorithm::~TrackingAlgorithm()
   {
+    if (image_ != NULL)
+    {
+      cvReleaseImage(&image_);
+      image_ = NULL;
+    }
   }
 
   //
@@ -85,29 +106,353 @@ namespace cv
 
   //---------------------------------------------------------------------------
   OnlineBoostingAlgorithm::OnlineBoostingAlgorithm() 
-    : TrackingAlgorithm()
+    : TrackingAlgorithm(), tracker_(NULL), cur_frame_rep_(NULL)
   {
   }
 
   //---------------------------------------------------------------------------
   OnlineBoostingAlgorithm::~OnlineBoostingAlgorithm()
   {
+    if (tracker_ != NULL)
+    {
+      delete tracker_;
+      tracker_ = NULL;
+    }
+
+    if (cur_frame_rep_ != NULL)
+    {
+      delete cur_frame_rep_;
+      cur_frame_rep_ = NULL;
+    }
   }
 
   //---------------------------------------------------------------------------
   bool OnlineBoostingAlgorithm::initialize(const IplImage* image, const ObjectTrackerParams& params, 
     const CvRect& init_bounding_box)
   {
+    // Import the image
+    import_image(image);
+
+    // If the boosting tracker has already been allocated, first de-allocate it
+    if (tracker_ != NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n" << std::endl;
+      delete tracker_;
+      tracker_ = NULL;
+    }
+
+    // Do the same for the image frame representation
+    if (cur_frame_rep_ != NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n" << std::endl;
+      delete cur_frame_rep_;
+      cur_frame_rep_ = NULL;
+    }
+
+    // (Re-)Initialize the boosting tracker
+    boosting::Size imageSize(image_->height, image_->width);
+    cur_frame_rep_ = new boosting::ImageRepresentation((unsigned char*)image_->imageData, imageSize);
+    boosting::Rect wholeImage;
+    wholeImage = imageSize;
+    boosting::Rect tracking_rect = cvrect_to_rect(init_bounding_box);
+    tracking_rect.confidence = 0;
+    tracking_rect_size_ = tracking_rect;
+    tracker_ = new boosting::BoostingTracker(cur_frame_rep_, tracking_rect, wholeImage, params.num_classifiers_);
+
+    // Initialize some useful tracking debugging information
+    tracker_lost_ = false;
+
     // Return success
     return true;
   }
 
   //---------------------------------------------------------------------------
   bool OnlineBoostingAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
-      CvRect* track_box, IplImage* likelihood)
+    CvRect* track_box, IplImage* likelihood)
   {
+    // Import the image
+    import_image(image);
+
+    // Make sure the tracker has already been successfully initialized
+    if (tracker_ == NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n" << std::endl;
+      return false;
+    }
+    if (cur_frame_rep_ == NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n" << std::endl;
+      return false;
+    }
+
+    // Calculate the patches within the search region
+    boosting::Size imageSize(image_->height, image_->width);
+    boosting::Rect wholeImage;
+    wholeImage = imageSize;
+    boosting::Patches *trackingPatches;	
+    boosting::Rect searchRegion;
+    searchRegion = tracker_->getTrackingROI(params.search_factor_);
+    trackingPatches = new boosting::PatchesRegularScan(searchRegion, wholeImage, tracking_rect_size_, params.overlap_);
+
+    cur_frame_rep_->setNewImageAndROI((unsigned char*)image_->imageData, searchRegion);
+
+    if (!tracker_->track(cur_frame_rep_, trackingPatches))
+    {
+      tracker_lost_ = true;
+    }
+    else
+    {
+      tracker_lost_ = false;
+    }
+
+    delete trackingPatches;
+
+    // Save the new tracking ROI
+    *track_box = rect_to_cvrect(tracker_->getTrackedPatch());
+    std::cout << "\rTracking confidence = " << tracker_->getConfidence();
+
+    // (Optionally) copy out the likelihood image
+    if (likelihood != NULL)
+    {
+      const IplImage* confImageDisplay = tracker_->getConfImageDisplay();
+      if ( (likelihood->width != confImageDisplay->width) || (likelihood->height != confImageDisplay->height) || 
+        (likelihood->depth != confImageDisplay->depth) || (likelihood->nChannels != confImageDisplay->nChannels) )
+      {
+        //std::cerr << "OnlineBoostingAlgorithm::update(...) -- Error!  Trying to copy likelihood with incorrect dimensions!\n" << std::endl;
+        cvReleaseImage(&likelihood);
+        likelihood = cvCloneImage(confImageDisplay);
+      }
+      else
+      {
+        cvCopy(confImageDisplay, likelihood);
+      }
+    }
+
+    // Return success or failure based on whether or not the tracker has been lost
+    return !tracker_lost_;
+  }
+
+  //---------------------------------------------------------------------------
+  void OnlineBoostingAlgorithm::import_image(const IplImage* image)
+  {
+    // We want the internal version of the image to be gray-scale, so let's
+    // do that here.  We'll handle cases where the input is either RGB, RGBA,
+    // or already gray-scale.  I assume it's already 8-bit.  If not then 
+    // an error is thrown.  I'm not going to deal with converting properly
+    // from every data type since that shouldn't be happening.
+
+    // Make sure the input image pointer is valid
+    if (image == NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
+      exit(0);  // <--- CV_ERROR?
+    }
+
+    // First, make sure our image is allocated
+    if (image_ == NULL)
+    {
+      image_ = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+    }
+
+    // Now copy it in appropriately as a gray-scale, 8-bit image
+    if (image->nChannels == 4)
+    {
+      cvCvtColor(image, image_, CV_RGBA2GRAY);
+    }
+    else if (image->nChannels == 3)
+    {
+      cvCvtColor(image, image_, CV_RGB2GRAY);
+    }
+    else if (image->nChannels == 1)
+    {
+      cvCopy(image, image_);
+    }
+    else
+    {
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n" << std::endl;
+      exit(0);
+    }
+  }
+
+  //---------------------------------------------------------------------------
+  boosting::Rect OnlineBoostingAlgorithm::cvrect_to_rect(const CvRect& in)
+  {
+    return boosting::Rect(in.y, in.x, in.height, in.width);
+  }
+
+  //---------------------------------------------------------------------------
+  CvRect OnlineBoostingAlgorithm::rect_to_cvrect(const boosting::Rect& in)
+  {
+    return cvRect(in.left, in.upper, in.width, in.height);
+  }
+
+  //
+  //
+  //
+
+  //---------------------------------------------------------------------------
+  SemiOnlineBoostingAlgorithm::SemiOnlineBoostingAlgorithm() 
+    : TrackingAlgorithm(), tracker_(NULL), cur_frame_rep_(NULL)
+  {
+  }
+
+  //---------------------------------------------------------------------------
+  SemiOnlineBoostingAlgorithm::~SemiOnlineBoostingAlgorithm()
+  {
+    if (tracker_ != NULL)
+    {
+      delete tracker_;
+      tracker_ = NULL;
+    }
+
+    if (cur_frame_rep_ != NULL)
+    {
+      delete cur_frame_rep_;
+      cur_frame_rep_ = NULL;
+    }
+  }
+
+  //---------------------------------------------------------------------------
+  bool SemiOnlineBoostingAlgorithm::initialize(const IplImage* image, const ObjectTrackerParams& params, 
+    const CvRect& init_bounding_box)
+  {
+    // Import the image
+    import_image(image);
+
+    // If the boosting tracker has already been allocated, first de-allocate it
+    if (tracker_ != NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n" << std::endl;
+      delete tracker_;
+      tracker_ = NULL;
+    }
+
+    // Do the same for the image frame representation
+    if (cur_frame_rep_ != NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n" << std::endl;
+      delete cur_frame_rep_;
+      cur_frame_rep_ = NULL;
+    }
+
+    // (Re-)Initialize the boosting tracker
+    boosting::Size imageSize(image_->height, image_->width);
+    cur_frame_rep_ = new boosting::ImageRepresentation((unsigned char*)image_->imageData, imageSize);
+    boosting::Rect wholeImage;
+    wholeImage = imageSize;
+    boosting::Rect tracking_rect = cvrect_to_rect(init_bounding_box);
+    tracking_rect.confidence = 0;
+    tracking_rect_size_ = tracking_rect;
+    tracker_ = new boosting::SemiBoostingTracker(cur_frame_rep_, tracking_rect, wholeImage, params.num_classifiers_);
+
+    // Initialize some useful tracking debugging information
+    tracker_lost_ = false;
+
     // Return success
     return true;
+  }
+
+  //---------------------------------------------------------------------------
+  bool SemiOnlineBoostingAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
+    CvRect* track_box, IplImage* likelihood)
+  {
+    // Import the image
+    import_image(image);
+
+    // Make sure the tracker has already been successfully initialized
+    if (tracker_ == NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n" << std::endl;
+      return false;
+    }
+    if (cur_frame_rep_ == NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n" << std::endl;
+      return false;
+    }
+
+    // Calculate the patches within the search region
+    boosting::Size imageSize(image_->height, image_->width);
+    boosting::Rect wholeImage;
+    wholeImage = imageSize;
+    boosting::Patches *trackingPatches;	
+    boosting::Rect searchRegion;
+    searchRegion = tracker_->getTrackingROI(params.search_factor_);
+    trackingPatches = new boosting::PatchesRegularScan(searchRegion, wholeImage, tracking_rect_size_, params.overlap_);
+
+    cur_frame_rep_->setNewImageAndROI((unsigned char*)image_->imageData, searchRegion);
+
+    if (!tracker_->track(cur_frame_rep_, trackingPatches))
+    {
+      tracker_lost_ = true;
+    }
+    else
+    {
+      tracker_lost_ = false;
+    }
+
+    delete trackingPatches;
+
+    // Save the new tracking ROI
+    *track_box = rect_to_cvrect(tracker_->getTrackedPatch());
+    std::cout << "\rTracking confidence = " << tracker_->getConfidence();
+
+    // Return success or failure based on whether or not the tracker has been lost
+    return !tracker_lost_;
+  }
+
+  //---------------------------------------------------------------------------
+  void SemiOnlineBoostingAlgorithm::import_image(const IplImage* image)
+  {
+    // We want the internal version of the image to be gray-scale, so let's
+    // do that here.  We'll handle cases where the input is either RGB, RGBA,
+    // or already gray-scale.  I assume it's already 8-bit.  If not then 
+    // an error is thrown.  I'm not going to deal with converting properly
+    // from every data type since that shouldn't be happening.
+
+    // Make sure the input image pointer is valid
+    if (image == NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
+      exit(0);  // <--- CV_ERROR?
+    }
+
+    // First, make sure our image is allocated
+    if (image_ == NULL)
+    {
+      image_ = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+    }
+
+    // Now copy it in appropriately as a gray-scale, 8-bit image
+    if (image->nChannels == 4)
+    {
+      cvCvtColor(image, image_, CV_RGBA2GRAY);
+    }
+    else if (image->nChannels == 3)
+    {
+      cvCvtColor(image, image_, CV_RGB2GRAY);
+    }
+    else if (image->nChannels == 1)
+    {
+      cvCopy(image, image_);
+    }
+    else
+    {
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n" << std::endl;
+      exit(0);
+    }
+  }
+
+  //---------------------------------------------------------------------------
+  boosting::Rect SemiOnlineBoostingAlgorithm::cvrect_to_rect(const CvRect& in)
+  {
+    return boosting::Rect(in.y, in.x, in.height, in.width);
+  }
+
+  //---------------------------------------------------------------------------
+  CvRect SemiOnlineBoostingAlgorithm::rect_to_cvrect(const boosting::Rect& in)
+  {
+    return cvRect(in.left, in.upper, in.width, in.height);
   }
 
   //
@@ -135,10 +480,15 @@ namespace cv
 
   //---------------------------------------------------------------------------
   bool OnlineMILAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
-      CvRect* track_box, IplImage* likelihood)
+    CvRect* track_box, IplImage* likelihood)
   {
     // Return success
     return true;
+  }
+
+  //---------------------------------------------------------------------------
+  void OnlineMILAlgorithm::import_image(const IplImage* image)
+  {
   }
 
   //
@@ -166,10 +516,15 @@ namespace cv
 
   //---------------------------------------------------------------------------
   bool LINEMODAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
-      CvRect* track_box, IplImage* likelihood)
+    CvRect* track_box, IplImage* likelihood)
   {
     // Return success
     return true;
+  }
+
+  //---------------------------------------------------------------------------
+  void LINEMODAlgorithm::import_image(const IplImage* image)
+  {
   }
 
   //
@@ -190,6 +545,9 @@ namespace cv
     {
     case ObjectTrackerParams::CV_ONLINEBOOSTING:
       tracker_ = new OnlineBoostingAlgorithm();
+      break;
+    case ObjectTrackerParams::CV_SEMIONLINEBOOSTING:
+      tracker_ = new SemiOnlineBoostingAlgorithm();
       break;
     case ObjectTrackerParams::CV_ONLINEMIL:
       tracker_ = new OnlineMILAlgorithm();

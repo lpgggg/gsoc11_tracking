@@ -88,6 +88,14 @@
 #include <shlobj.h>
 #include <stdint.h>
 
+//general headers
+#include <vector>
+#include <vector>
+#include <string>
+#include <map>
+#include <cstdio>
+#include <deque>
+
 //MAX_PATH variable used by helmut
 #ifdef MAX_PATH /* Work-around for Mingw */
 #undef MAX_PATH
@@ -98,581 +106,631 @@
 #endif
 #endif
 
-//general headers
-#include <vector>
-#include <vector>
-#include <string>
-#include <map>
-#include <cstdio>
-#include <deque>
-
-typedef uint32_t  __uint32;
-typedef uint64_t  __uint64;
-
-class Point2D;
-class Size;
-
-class Color
+namespace cv
 {
-public: 
-
-  Color();
-  Color(int red, int green, int blue);
-  Color(int idx);
-
-  int red;
-  int green;
-  int blue;
-};
-
-class Rect
-{
-public:
-
-  Rect();
-  Rect(int upper, int left, int height, int width);
-
-  int upper;
-  int left;
-  int height;
-  int width;
-
-  float confidence;
-
-  Rect operator+ (Point2D p);
-  Rect operator+ (Rect r);
-  Rect operator- (Point2D p);
-  Rect operator* (float f);
-  Rect operator= (Size s);
-  Rect operator= (Rect r);
-  bool operator== (Rect r);
-  bool isValid (Rect validROI);
-
-  int checkOverlap (Rect rect);
-  int getArea(){return height*width;};
-  bool isDetection(Rect eval, unsigned char *labeledImg, int imgWidth);
+  namespace boosting
+  {
 
-  CvRect getCvRect();
-}; 
+    typedef uint32_t  __uint32;
+    typedef uint64_t  __uint64;
+
+    class Point2D;
+    class Size;
+
+    class Color
+    {
+    public: 
 
-class Size
-{
-public:
+      Color();
+      Color(int red, int green, int blue);
+      Color(int idx);
 
-  Size();
-  Size(int height, int width);
+      int red;
+      int green;
+      int blue;
+    };
+
+    class Rect
+    {
+    public:
+
+      Rect();
+      Rect(int upper, int left, int height, int width);
 
-  int height;
-  int width;
+      int upper;
+      int left;
+      int height;
+      int width;
+
+      float confidence;
+
+      Rect operator+ (Point2D p);
+      Rect operator+ (Rect r);
+      Rect operator- (Point2D p);
+      Rect operator* (float f);
+      Rect operator= (Size s);
+      Rect operator= (Rect r);
+      bool operator== (Rect r);
+      bool isValid (Rect validROI);
 
-  Size operator= (Rect r);
-  Size operator= (Size s);
-  Size operator* (float f);
-  bool operator== (Size s);
+      int checkOverlap (Rect rect);
+      int getArea(){return height*width;};
+      bool isDetection(Rect eval, unsigned char *labeledImg, int imgWidth);
 
-  int getArea();
-};
+      CvRect getCvRect();
+    }; 
 
+    class Size
+    {
+    public:
 
-class Point2D
-{
-public:
+      Size();
+      Size(int height, int width);
 
-  Point2D();
-  Point2D(int row, int col);
+      int height;
+      int width;
 
-  int row;
-  int col;
+      Size operator= (Rect r);
+      Size operator= (Size s);
+      Size operator* (float f);
+      bool operator== (Size s);
 
-  Point2D operator+ (Point2D p);
-  Point2D operator- (Point2D p);
-  Point2D operator= (Point2D p);
-  Point2D operator= (Rect r);
+      int getArea();
+    };
 
-};
 
-class ImageRepresentation  
-{
-public:
+    class Point2D
+    {
+    public:
 
-  ImageRepresentation(unsigned char* image, Size imagSize);
-  ImageRepresentation(unsigned char* image, Size imagSize, Rect imageROI);
-  void defaultInit(unsigned char* image, Size imageSize);
-  virtual ~ImageRepresentation();
+      Point2D();
+      Point2D(int row, int col);
 
-  int getSum(Rect imageROI);
-  float getMean(Rect imagROI);
-  unsigned int getValue(Point2D position);
-  Size getImageSize(void){return m_imageSize;};
-  Rect getImageROI(void){return m_ROI;};
-  void setNewImage(unsigned char* image);
-  void setNewROI(Rect ROI);
-  void setNewImageSize( Rect ROI );
-  void setNewImageAndROI(unsigned char* image, Rect ROI);
-  float getVariance(Rect imageROI);
-  long getSqSum(Rect imageROI);
-  bool getUseVariance(){return m_useVariance;};
-  void setUseVariance(bool useVariance){ this->m_useVariance = useVariance; };
+      int row;
+      int col;
 
+      Point2D operator+ (Point2D p);
+      Point2D operator- (Point2D p);
+      Point2D operator= (Point2D p);
+      Point2D operator= (Rect r);
 
-private:
+    };
 
-  bool m_useVariance;
-  void createIntegralsOfROI(unsigned char* image);
+    class ImageRepresentation  
+    {
+    public:
 
-  Size m_imageSize;
-  __uint32* intImage;
-  __uint64* intSqImage;
-  Rect m_ROI;
-  Point2D m_offset;
-};
+      ImageRepresentation(unsigned char* image, Size imagSize);
+      ImageRepresentation(unsigned char* image, Size imagSize, Rect imageROI);
+      void defaultInit(unsigned char* image, Size imageSize);
+      virtual ~ImageRepresentation();
 
-class Patches
-{
-public:
+      int getSum(Rect imageROI);
+      float getMean(Rect imagROI);
+      unsigned int getValue(Point2D position);
+      Size getImageSize(void){return m_imageSize;};
+      Rect getImageROI(void){return m_ROI;};
+      void setNewImage(unsigned char* image);
+      void setNewROI(Rect ROI);
+      void setNewImageSize( Rect ROI );
+      void setNewImageAndROI(unsigned char* image, Rect ROI);
+      float getVariance(Rect imageROI);
+      long getSqSum(Rect imageROI);
+      bool getUseVariance(){return m_useVariance;};
+      void setUseVariance(bool useVariance){ this->m_useVariance = useVariance; };
 
-  Patches();
-  Patches(int num);
-  virtual ~Patches(void);
 
-  virtual Rect getRect(int index);
-  virtual Rect getSpecialRect(const char* what);
-  virtual Rect getSpecialRect(const char* what, Size patchSize);
+    private:
 
-  virtual Rect getROI();
-  virtual int getNum(void){return num;};
+      bool m_useVariance;
+      void createIntegralsOfROI(unsigned char* image);
 
-  int checkOverlap(Rect rect);
+      Size m_imageSize;
+      __uint32* intImage;
+      __uint64* intSqImage;
+      Rect m_ROI;
+      Point2D m_offset;
+    };
 
-  virtual bool isDetection(Rect eval, unsigned char *labeledImg, int imgWidth);
-  virtual int getNumPatchesX(){return numPatchesX;}; 
-  virtual int getNumPatchesY(){return numPatchesY;};
+    class Patches
+    {
+    public:
 
-protected:
+      Patches();
+      Patches(int num);
+      virtual ~Patches(void);
 
-  void setCheckedROI(Rect imageROI, Rect validROI);
+      virtual Rect getRect(int index);
+      virtual Rect getSpecialRect(const char* what);
+      virtual Rect getSpecialRect(const char* what, Size patchSize);
 
-  Rect* patches;
-  int num;
-  Rect ROI;
-  int numPatchesX; 
-  int numPatchesY;
-};
+      virtual Rect getROI();
+      virtual int getNum(void){return num;};
 
-class PatchesRegularScan : public Patches
-{
-public:
+      int checkOverlap(Rect rect);
 
-  PatchesRegularScan(Rect imageROI, Size patchSize, float relOverlap);
-  PatchesRegularScan(Rect imageROI, Rect validROI, Size patchSize, float relOverlap);
-  virtual ~PatchesRegularScan (void);
+      virtual bool isDetection(Rect eval, unsigned char *labeledImg, int imgWidth);
+      virtual int getNumPatchesX(){return numPatchesX;}; 
+      virtual int getNumPatchesY(){return numPatchesY;};
 
-  Rect getSpecialRect(const char* what);
-  Rect getSpecialRect(const char* what, Size patchSize);
-  Size getPatchGrid(){return m_patchGrid;};
+    protected:
 
-private:
+      void setCheckedROI(Rect imageROI, Rect validROI);
 
-  void calculatePatches(Rect imageROI, Rect validROI, Size patchSize, float relOverlap);
+      Rect* patches;
+      int num;
+      Rect ROI;
+      int numPatchesX; 
+      int numPatchesY;
+    };
 
-  Rect m_rectUpperLeft;
-  Rect m_rectUpperRight;
-  Rect m_rectLowerLeft;
-  Rect m_rectLowerRight;
-  Size m_patchGrid;
+    class PatchesRegularScan : public Patches
+    {
+    public:
 
-};
+      PatchesRegularScan(Rect imageROI, Size patchSize, float relOverlap);
+      PatchesRegularScan(Rect imageROI, Rect validROI, Size patchSize, float relOverlap);
+      virtual ~PatchesRegularScan (void);
 
-class PatchesRegularScaleScan : public Patches
-{
-public:
+      Rect getSpecialRect(const char* what);
+      Rect getSpecialRect(const char* what, Size patchSize);
+      Size getPatchGrid(){return m_patchGrid;};
 
-  PatchesRegularScaleScan (Rect imageROI, Size patchSize, float relOverlap, float scaleStart, float scaleEnd, float scaleFactor);
-  PatchesRegularScaleScan (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float scaleStart, float scaleEnd, float scaleFactor);
-  virtual ~PatchesRegularScaleScan();
+    private:
 
-  Rect getSpecialRect (const char* what);
-  Rect getSpecialRect (const char* what, Size patchSize);
+      void calculatePatches(Rect imageROI, Rect validROI, Size patchSize, float relOverlap);
 
-private:
+      Rect m_rectUpperLeft;
+      Rect m_rectUpperRight;
+      Rect m_rectLowerLeft;
+      Rect m_rectLowerRight;
+      Size m_patchGrid;
 
-  void calculatePatches (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float scaleStart, float scaleEnd, float scaleFactor);
+    };
 
-};
+    class PatchesRegularScaleScan : public Patches
+    {
+    public:
 
-class PatchesFunctionScaleScan : public Patches
-{
-public:
+      PatchesRegularScaleScan (Rect imageROI, Size patchSize, float relOverlap, float scaleStart, float scaleEnd, float scaleFactor);
+      PatchesRegularScaleScan (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float scaleStart, float scaleEnd, float scaleFactor);
+      virtual ~PatchesRegularScaleScan();
 
-  typedef float (*GetScale)(int, int);
+      Rect getSpecialRect (const char* what);
+      Rect getSpecialRect (const char* what, Size patchSize);
 
-  PatchesFunctionScaleScan (Rect imageROI, Size patchSize, float relOverlap, GetScale getScale);
-  PatchesFunctionScaleScan (Rect imageROI, Rect validROI, Size PatchSize, float relOverlap, GetScale getScale);
-  PatchesFunctionScaleScan (Rect imageROI, Size patchSize, float relOverlap, float coefY, float coef1, float minScaleFactor=1.0f);
-  PatchesFunctionScaleScan (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float coefY, float coef1, float minScaleFactor = 1.0f);
-  virtual ~PatchesFunctionScaleScan();
+    private:
 
-  Rect getSpecialRect (const char* what);
-  Rect getSpecialRect (const char* what, Size patchSize);
+      void calculatePatches (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float scaleStart, float scaleEnd, float scaleFactor);
 
-private:
+    };
 
-  void calculatePatches (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, GetScale getScale);
-  void calculatePatches (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float coefY, float coef1, float minScaleFactor);
+    class PatchesFunctionScaleScan : public Patches
+    {
+    public:
 
-  Rect rectUpperLeft;
-  Rect rectUpperRight;
-  Rect rectLowerLeft;
-  Rect rectLowerRight;
-};
+      typedef float (*GetScale)(int, int);
 
-class PatchesManualSet : public Patches
-{
-public:
+      PatchesFunctionScaleScan (Rect imageROI, Size patchSize, float relOverlap, GetScale getScale);
+      PatchesFunctionScaleScan (Rect imageROI, Rect validROI, Size PatchSize, float relOverlap, GetScale getScale);
+      PatchesFunctionScaleScan (Rect imageROI, Size patchSize, float relOverlap, float coefY, float coef1, float minScaleFactor=1.0f);
+      PatchesFunctionScaleScan (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float coefY, float coef1, float minScaleFactor = 1.0f);
+      virtual ~PatchesFunctionScaleScan();
 
-  PatchesManualSet(int numPatches, Rect* patches);
-  PatchesManualSet(int numPatches, Rect* patches, Rect ROI);
-  virtual ~PatchesManualSet (void);
+      Rect getSpecialRect (const char* what);
+      Rect getSpecialRect (const char* what, Size patchSize);
 
-  Rect getSpecialRect (const char* what){return Rect(-1,-1,-1,-1);} ;
-  Rect getSpecialRect (const char* what, Size patchSize){return Rect(-1,-1,-1,-1);};
-};
+    private:
 
-//#if OS_type==2
-//#define round(x) ( (x) >= 0 ? (x)+0.5 : (x)-0.5 )
-//#define min(x,y) (x > y ? y : x)
-//#define max(x,y) (x > y ? x : y)
+      void calculatePatches (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, GetScale getScale);
+      void calculatePatches (Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float coefY, float coef1, float minScaleFactor);
 
-//#define snprintf _snprintf
-//#endif
+      Rect rectUpperLeft;
+      Rect rectUpperRight;
+      Rect rectLowerLeft;
+      Rect rectLowerRight;
+    };
 
-class EstimatedGaussDistribution  
-{
-public:
+    class PatchesManualSet : public Patches
+    {
+    public:
 
-  EstimatedGaussDistribution();
-  EstimatedGaussDistribution(float P_mean, float R_mean, float P_sigma, float R_sigma);
-  virtual ~EstimatedGaussDistribution();
+      PatchesManualSet(int numPatches, Rect* patches);
+      PatchesManualSet(int numPatches, Rect* patches, Rect ROI);
+      virtual ~PatchesManualSet (void);
 
-  void update(float value); //, float timeConstant = -1.0);
+      Rect getSpecialRect (const char* what){return Rect(-1,-1,-1,-1);} ;
+      Rect getSpecialRect (const char* what, Size patchSize){return Rect(-1,-1,-1,-1);};
+    };
 
-  float getMean(){return m_mean;};
-  float getSigma(){return m_sigma;};
-  void setValues(float mean, float sigma);
+    //#if OS_type==2
+    //#define round(x) ( (x) >= 0 ? (x)+0.5 : (x)-0.5 )
+    //#define min(x,y) (x > y ? y : x)
+    //#define max(x,y) (x > y ? x : y)
 
-private:
+    //#define snprintf _snprintf
+    //#endif
 
-  float m_mean;
-  float m_sigma;
-  float m_P_mean;
-  float m_P_sigma;
-  float m_R_mean;
-  float m_R_sigma;
-};
+    class EstimatedGaussDistribution  
+    {
+    public:
 
-class FeatureHaar
-{
+      EstimatedGaussDistribution();
+      EstimatedGaussDistribution(float P_mean, float R_mean, float P_sigma, float R_sigma);
+      virtual ~EstimatedGaussDistribution();
 
-public:
+      void update(float value); //, float timeConstant = -1.0);
 
-  FeatureHaar(Size patchSize);
-  virtual ~FeatureHaar();
+      float getMean(){return m_mean;};
+      float getSigma(){return m_sigma;};
+      void setValues(float mean, float sigma);
 
-  void getInitialDistribution(EstimatedGaussDistribution *distribution);
+    private:
 
-  bool eval(ImageRepresentation* image, Rect ROI, float* result); 
+      float m_mean;
+      float m_sigma;
+      float m_P_mean;
+      float m_P_sigma;
+      float m_R_mean;
+      float m_R_sigma;
+    };
 
-  float getResponse(){return m_response;};
+    class FeatureHaar
+    {
 
-  int getNumAreas(){return m_numAreas;};
-  int* getWeights(){return m_weights;};
-  Rect* getAreas(){return m_areas;};
+    public:
 
-private:
+      FeatureHaar(Size patchSize);
+      virtual ~FeatureHaar();
 
-  char m_type[20];
-  int m_numAreas;
-  int* m_weights;
-  float m_initMean;
-  float m_initSigma;
+      void getInitialDistribution(EstimatedGaussDistribution *distribution);
 
-  void generateRandomFeature(Size imageSize);
-  Rect* m_areas;     // areas within the patch over which to compute the feature
-  Size m_initSize;   // size of the patch used during training
-  Size m_curSize;    // size of the patches currently under investigation
-  float m_scaleFactorHeight;  // scaling factor in vertical direction
-  float m_scaleFactorWidth;   // scaling factor in horizontal direction
-  Rect* m_scaleAreas;// areas after scaling
-  float* m_scaleWeights; // weights after scaling
-  float m_response;
+      bool eval(ImageRepresentation* image, Rect ROI, float* result); 
 
-};
+      float getResponse(){return m_response;};
 
-class ClassifierThreshold 
-{
-public:
+      int getNumAreas(){return m_numAreas;};
+      int* getWeights(){return m_weights;};
+      Rect* getAreas(){return m_areas;};
 
-  ClassifierThreshold();
-  virtual ~ClassifierThreshold();
+    private:
 
-  void update(float value, int target);
-  int eval(float value);
+      char m_type[20];
+      int m_numAreas;
+      int* m_weights;
+      float m_initMean;
+      float m_initSigma;
 
-  void* getDistribution(int target);
+      void generateRandomFeature(Size imageSize);
+      Rect* m_areas;     // areas within the patch over which to compute the feature
+      Size m_initSize;   // size of the patch used during training
+      Size m_curSize;    // size of the patches currently under investigation
+      float m_scaleFactorHeight;  // scaling factor in vertical direction
+      float m_scaleFactorWidth;   // scaling factor in horizontal direction
+      Rect* m_scaleAreas;// areas after scaling
+      float* m_scaleWeights; // weights after scaling
+      float m_response;
 
-private:
+    };
 
-  EstimatedGaussDistribution* m_posSamples;
-  EstimatedGaussDistribution* m_negSamples;
+    class ClassifierThreshold 
+    {
+    public:
 
-  float m_threshold;
-  int m_parity;
-};
+      ClassifierThreshold();
+      virtual ~ClassifierThreshold();
 
-class WeakClassifier  
-{
+      void update(float value, int target);
+      int eval(float value);
 
-public:
+      void* getDistribution(int target);
 
-  WeakClassifier();
-  virtual ~WeakClassifier();
+    private:
 
-  virtual bool update(ImageRepresentation* image, Rect ROI, int target);
+      EstimatedGaussDistribution* m_posSamples;
+      EstimatedGaussDistribution* m_negSamples;
 
-  virtual int eval(ImageRepresentation* image, Rect ROI);
+      float m_threshold;
+      int m_parity;
+    };
 
-  virtual float getValue (ImageRepresentation* image, Rect  ROI);
+    class WeakClassifier  
+    {
 
-  virtual int getType();
+    public:
 
-};
+      WeakClassifier();
+      virtual ~WeakClassifier();
 
-class WeakClassifierHaarFeature : public WeakClassifier
-{
+      virtual bool update(ImageRepresentation* image, Rect ROI, int target);
 
-public:
+      virtual int eval(ImageRepresentation* image, Rect ROI);
 
-  WeakClassifierHaarFeature(Size patchSize);
-  virtual ~WeakClassifierHaarFeature();
+      virtual float getValue (ImageRepresentation* image, Rect  ROI);
 
-  bool update(ImageRepresentation* image, Rect ROI, int target); 
+      virtual int getType();
 
-  int eval(ImageRepresentation* image, Rect ROI); 
+    };
 
-  float getValue(ImageRepresentation* image, Rect ROI);
+    class WeakClassifierHaarFeature : public WeakClassifier
+    {
 
-  int getType(){return 1;};
+    public:
 
-  EstimatedGaussDistribution* getPosDistribution();
-  EstimatedGaussDistribution* getNegDistribution();
+      WeakClassifierHaarFeature(Size patchSize);
+      virtual ~WeakClassifierHaarFeature();
 
-  void resetPosDist();
-  void initPosDist();
+      bool update(ImageRepresentation* image, Rect ROI, int target); 
 
-private:
+      int eval(ImageRepresentation* image, Rect ROI); 
 
-  FeatureHaar* m_feature;
-  ClassifierThreshold* m_classifier;
+      float getValue(ImageRepresentation* image, Rect ROI);
 
-  void generateRandomClassifier();
+      int getType(){return 1;};
 
-};
+      EstimatedGaussDistribution* getPosDistribution();
+      EstimatedGaussDistribution* getNegDistribution();
 
-class BaseClassifier  
-{
-public:
+      void resetPosDist();
+      void initPosDist();
 
-  BaseClassifier(int numWeakClassifier, int iterationInit, Size patchSize); 
-  BaseClassifier(int numWeakClassifier, int iterationInit, WeakClassifier** weakClassifier); 
+    private:
 
-  virtual ~BaseClassifier();
+      FeatureHaar* m_feature;
+      ClassifierThreshold* m_classifier;
 
-  void trainClassifier(ImageRepresentation* image, Rect ROI, int target, float importance, bool* errorMask); 
+      void generateRandomClassifier();
 
-  void getErrorMask(ImageRepresentation* image, Rect ROI, int target, bool* errorMask); 
-  void getErrors(float* errors);
-  virtual int selectBestClassifier(bool* errorMask, float importance, float* errors); 
+    };
 
-  virtual int replaceWeakestClassifier(float* errors, Size patchSize);
-  virtual float getError(int curWeakClassifier = -1);
+    class BaseClassifier  
+    {
+    public:
 
-  void replaceClassifierStatistic(int sourceIndex, int targetIndex);
+      BaseClassifier(int numWeakClassifier, int iterationInit, Size patchSize); 
+      BaseClassifier(int numWeakClassifier, int iterationInit, WeakClassifier** weakClassifier); 
 
-  int eval(ImageRepresentation* image, Rect ROI); 
+      virtual ~BaseClassifier();
 
-  float getValue(ImageRepresentation *image, Rect ROI, int weakClassifierIdx = -1);
+      void trainClassifier(ImageRepresentation* image, Rect ROI, int target, float importance, bool* errorMask); 
 
-  WeakClassifier** getReferenceWeakClassifier(){return weakClassifier;};
-  void setReferenceWeakClassifier(WeakClassifier** weakClassifier){this->weakClassifier = weakClassifier;};
+      void getErrorMask(ImageRepresentation* image, Rect ROI, int target, bool* errorMask); 
+      void getErrors(float* errors);
+      virtual int selectBestClassifier(bool* errorMask, float importance, float* errors); 
 
-  int getNumWeakClassifier(){return m_numWeakClassifier;};
-  int getIterationInit(){return m_iterationInit;};
-  float getWCorrect(){return m_wCorrect[m_selectedClassifier];};
-  float getWWrong(){return m_wWrong[m_selectedClassifier];};
-  void setWCorrect(int idx, float value){ if(idx < m_numWeakClassifier) m_wCorrect[idx] = value; };
-  void setWWrong(int idx, float value){ if(idx < m_numWeakClassifier) m_wWrong[idx] = value; };
+      virtual int replaceWeakestClassifier(float* errors, Size patchSize);
+      virtual float getError(int curWeakClassifier = -1);
 
-  int getTypeOfSelectedClassifier(){return weakClassifier[m_selectedClassifier]->getType();};
-  int getIdxOfSelectedClassifier(){return m_selectedClassifier;};
-  int getIdxOfNewWeakClassifier(){return m_idxOfNewWeakClassifier;};
+      void replaceClassifierStatistic(int sourceIndex, int targetIndex);
 
-protected:
+      int eval(ImageRepresentation* image, Rect ROI); 
 
-  WeakClassifier** weakClassifier;
-  bool m_referenceWeakClassifier;
-  int m_numWeakClassifier;
-  int m_selectedClassifier;
-  int m_idxOfNewWeakClassifier;
-  float* m_wCorrect;
-  float* m_wWrong;
-  int m_iterationInit;
-  void generateRandomClassifier (Size patchSize);
+      float getValue(ImageRepresentation *image, Rect ROI, int weakClassifierIdx = -1);
 
-};
+      WeakClassifier** getReferenceWeakClassifier(){return weakClassifier;};
+      void setReferenceWeakClassifier(WeakClassifier** weakClassifier){this->weakClassifier = weakClassifier;};
 
-class StrongClassifier  
-{
-public:
+      int getNumWeakClassifier(){return m_numWeakClassifier;};
+      int getIterationInit(){return m_iterationInit;};
+      float getWCorrect(){return m_wCorrect[m_selectedClassifier];};
+      float getWWrong(){return m_wWrong[m_selectedClassifier];};
+      void setWCorrect(int idx, float value){ if(idx < m_numWeakClassifier) m_wCorrect[idx] = value; };
+      void setWWrong(int idx, float value){ if(idx < m_numWeakClassifier) m_wWrong[idx] = value; };
 
-  StrongClassifier( int numBaseClassifier, 
-    int numWeakClassifier, 
-    Size patchSize, 
-    bool useFeatureExchange = false, 
-    int iterationInit = 0);
+      int getTypeOfSelectedClassifier(){return weakClassifier[m_selectedClassifier]->getType();};
+      int getIdxOfSelectedClassifier(){return m_selectedClassifier;};
+      int getIdxOfNewWeakClassifier(){return m_idxOfNewWeakClassifier;};
 
-  ~StrongClassifier();
+    protected:
 
-  virtual float eval(ImageRepresentation *image, Rect ROI); 
+      WeakClassifier** weakClassifier;
+      bool m_referenceWeakClassifier;
+      int m_numWeakClassifier;
+      int m_selectedClassifier;
+      int m_idxOfNewWeakClassifier;
+      float* m_wCorrect;
+      float* m_wWrong;
+      int m_iterationInit;
+      void generateRandomClassifier (Size patchSize);
 
-  virtual bool update(ImageRepresentation *image, Rect ROI, int target, float importance = 1.0f); 
-  virtual bool updateSemi(ImageRepresentation *image, Rect ROI, float priorConfidence);
+    };
 
-  Size getPatchSize(){return patchSize;};
-  int getNumBaseClassifier(){return numBaseClassifier;};
-  int getIdxOfSelectedClassifierOfBaseClassifier (int baseClassifierIdx=0){return baseClassifier[baseClassifierIdx]->getIdxOfSelectedClassifier();};
-  virtual float getSumAlpha(int toBaseClassifier = -1);
-  float getAlpha(int idx){return alpha[idx];};
+    class StrongClassifier  
+    {
+    public:
 
-  float getFeatureValue(ImageRepresentation *image, Rect ROI, int baseClassifierIdx);
-  float getImportance(ImageRepresentation *image, Rect ROI, int traget, int numBaseClassifiers = -1);
+      StrongClassifier( int numBaseClassifier, 
+        int numWeakClassifier, 
+        Size patchSize, 
+        bool useFeatureExchange = false, 
+        int iterationInit = 0);
 
-  WeakClassifier** getReferenceWeakClassifier(){return baseClassifier[0]->getReferenceWeakClassifier();};
+      ~StrongClassifier();
 
-  void resetWeightDistribution();
+      virtual float eval(ImageRepresentation *image, Rect ROI); 
 
-protected:
+      virtual bool update(ImageRepresentation *image, Rect ROI, int target, float importance = 1.0f); 
+      virtual bool updateSemi(ImageRepresentation *image, Rect ROI, float priorConfidence);
 
-  int numBaseClassifier;
-  int numAllWeakClassifier;
+      Size getPatchSize(){return patchSize;};
+      int getNumBaseClassifier(){return numBaseClassifier;};
+      int getIdxOfSelectedClassifierOfBaseClassifier (int baseClassifierIdx=0){return baseClassifier[baseClassifierIdx]->getIdxOfSelectedClassifier();};
+      virtual float getSumAlpha(int toBaseClassifier = -1);
+      float getAlpha(int idx){return alpha[idx];};
 
-  BaseClassifier** baseClassifier;
-  float* alpha;
-  Size patchSize;
+      float getFeatureValue(ImageRepresentation *image, Rect ROI, int baseClassifierIdx);
+      float getImportance(ImageRepresentation *image, Rect ROI, int traget, int numBaseClassifiers = -1);
 
-  bool useFeatureExchange;
+      WeakClassifier** getReferenceWeakClassifier(){return baseClassifier[0]->getReferenceWeakClassifier();};
 
-};
+      void resetWeightDistribution();
 
-class StrongClassifierDirectSelection : public StrongClassifier
-{
-public:
+    protected:
 
-  StrongClassifierDirectSelection(int numBaseClassifier, int numWeakClassifier, Size patchSize, bool useFeatureExchange = false, int iterationInit = 0); 
+      int numBaseClassifier;
+      int numAllWeakClassifier;
 
-  virtual ~StrongClassifierDirectSelection();
+      BaseClassifier** baseClassifier;
+      float* alpha;
+      Size patchSize;
 
-  bool update(ImageRepresentation *image, Rect ROI, int target, float importance = 1.0); 
+      bool useFeatureExchange;
 
-private:
+    };
 
-  bool * m_errorMask;
-  float* m_errors;
-  float* m_sumErrors;
-};
+    class StrongClassifierDirectSelection : public StrongClassifier
+    {
+    public:
 
-class StrongClassifierStandard  : public StrongClassifier
-{
-public:
+      StrongClassifierDirectSelection(int numBaseClassifier, int numWeakClassifier, Size patchSize, bool useFeatureExchange = false, int iterationInit = 0); 
 
-  StrongClassifierStandard(int numBaseClassifier, int numWeakClassifier,
-    Size patchSize, bool useFeatureExchange = false, int iterationInit = 0); 
+      virtual ~StrongClassifierDirectSelection();
 
-  virtual ~StrongClassifierStandard();
+      bool update(ImageRepresentation *image, Rect ROI, int target, float importance = 1.0); 
 
-  bool update(ImageRepresentation *image, Rect ROI, int target, float importance = 1.0);
+    private:
 
-private:
+      bool * m_errorMask;
+      float* m_errors;
+      float* m_sumErrors;
+    };
 
-  bool *m_errorMask;
-  float *m_errors;
+    class StrongClassifierStandard  : public StrongClassifier
+    {
+    public:
 
-};
+      StrongClassifierStandard(int numBaseClassifier, int numWeakClassifier,
+        Size patchSize, bool useFeatureExchange = false, int iterationInit = 0); 
 
-class Detector
-{
-public:
+      virtual ~StrongClassifierStandard();
 
-  Detector(StrongClassifier* classifier);
-  virtual ~Detector(void);
+      bool update(ImageRepresentation *image, Rect ROI, int target, float importance = 1.0);
 
-  void classify(ImageRepresentation* image, Patches* patches, float minMargin = 0.0f);
-  void classify(ImageRepresentation* image, Patches* patches, float minMargin, float minVariance );
+    private:
 
-  void classifySmooth(ImageRepresentation* image, Patches* patches, float minMargin = 0);
+      bool *m_errorMask;
+      float *m_errors;
 
-  int getNumDetections();
-  float getConfidence(int patchIdx);
-  float getConfidenceOfDetection (int detectionIdx);
+    };
 
+    class StrongClassifierStandardSemi  : public StrongClassifier
+    {
+    public:
 
-  float getConfidenceOfBestDetection (){return m_maxConfidence;};
-  int getPatchIdxOfBestDetection();
+      StrongClassifierStandardSemi(int numBaseClassifier, int numWeakClassifier, 
+        Size patchSize,  bool useFeatureExchange = false, int iterationInit = 0);
 
-  int getPatchIdxOfDetection(int detectionIdx);
+      virtual ~StrongClassifierStandardSemi();
 
-  int* getIdxDetections(){return m_idxDetections;};
-  float* getConfidences(){return m_confidences;};
+      bool updateSemi(ImageRepresentation *image, Rect ROI, float priorConfidence);
+      void getPseudoValues(ImageRepresentation *image, Rect ROI, float priorConfidence, float* pseudoLambdaInOut, int* pseudoTargetInOut);
 
-private:
+    private:
 
-  void prepareConfidencesMemory(int numPatches);
-  void prepareDetectionsMemory(int numDetections);
+      bool *m_errorMask;
+      float *m_errors;
+      float* m_pseudoLambda;
+      int* m_pseudoTarget;
 
-  StrongClassifier* m_classifier;
-  float* m_confidences;
-  int m_sizeConfidences;
-  int m_numDetections;
-  int* m_idxDetections;
-  int m_sizeDetections;
-  int m_idxBestDetection;
-  float m_maxConfidence;
-  CvMat *m_confMatrix;
-  CvMat *m_confMatrixSmooth;
-};
+    };
 
+    class Detector
+    {
+    public:
 
-/** The main Online Boosting tracker class */
-class BoostingTracker
-{
-public:
-  BoostingTracker(ImageRepresentation* image, Rect initPatch, Rect validROI, int numBaseClassifier);
-  virtual ~BoostingTracker();
+      Detector(StrongClassifier* classifier);
+      virtual ~Detector(void);
 
-  bool track(ImageRepresentation* image, Patches* patches);
+      void classify(ImageRepresentation* image, Patches* patches, float minMargin = 0.0f);
+      void classify(ImageRepresentation* image, Patches* patches, float minMargin, float minVariance );
 
-  Rect getTrackingROI(float searchFactor);
-  float getConfidence();
-  Rect getTrackedPatch();
-  Point2D getCenter();
+      void classifySmooth(ImageRepresentation* image, Patches* patches, float minMargin = 0);
 
-private:
-  StrongClassifier* classifier;
-  Detector* detector;
-  Rect validROI;
-  Rect trackedPatch;
-  float confidence;
-  Point2D dxDy;
-};
+      int getNumDetections();
+      float getConfidence(int patchIdx);
+      float getConfidenceOfDetection (int detectionIdx);
+
+
+      float getConfidenceOfBestDetection (){return m_maxConfidence;};
+      int getPatchIdxOfBestDetection();
+
+      int getPatchIdxOfDetection(int detectionIdx);
+
+      int* getIdxDetections(){return m_idxDetections;};
+      float* getConfidences(){return m_confidences;};
+
+      IplImage* getConfImageDisplay() const { return m_confImageDisplay; }
+
+    private:
+
+      void prepareConfidencesMemory(int numPatches);
+      void prepareDetectionsMemory(int numDetections);
+
+      StrongClassifier* m_classifier;
+      float* m_confidences;
+      int m_sizeConfidences;
+      int m_numDetections;
+      int* m_idxDetections;
+      int m_sizeDetections;
+      int m_idxBestDetection;
+      float m_maxConfidence;
+      CvMat *m_confMatrix;
+      CvMat *m_confMatrixSmooth;
+      IplImage* m_confImageDisplay;
+    };
+
+
+    /** The main Online Boosting tracker class */
+    class BoostingTracker
+    {
+    public:
+      BoostingTracker(ImageRepresentation* image, Rect initPatch, Rect validROI, int numBaseClassifier);
+      virtual ~BoostingTracker();
+
+      bool track(ImageRepresentation* image, Patches* patches);
+
+      Rect getTrackingROI(float searchFactor);
+      float getConfidence();
+      Rect getTrackedPatch();
+      Point2D getCenter();
+      IplImage* getConfImageDisplay() const { return detector->getConfImageDisplay(); }
+
+    private:
+      StrongClassifier* classifier;
+      Detector* detector;
+      Rect validROI;
+      Rect trackedPatch;
+      float confidence;
+      Point2D dxDy;
+    };
+
+    class SemiBoostingTracker
+    {
+    public:
+      SemiBoostingTracker(ImageRepresentation* image, Rect initPatch, Rect validROI, int numBaseClassifier);
+      virtual ~SemiBoostingTracker();
+
+      bool track(ImageRepresentation* image, Patches* patches);
+
+      Rect getTrackingROI(float searchFactor);
+      float getConfidence();
+      float getPriorConfidence();
+      Rect getTrackedPatch();
+      Point2D getCenter();
+      IplImage* getConfImageDisplay() const { return detector->getConfImageDisplay(); }
+
+    private:
+      StrongClassifier* classifierOff;
+      StrongClassifierStandardSemi* classifier;
+      Detector* detector;
+      Rect trackedPatch;
+      Rect validROI;
+      float confidence;
+      float priorConfidence;
+    };
+
+  }
+}
 
 #endif  // #ifndef __OPENCV_ONLINE_BOOSTING_H__
 

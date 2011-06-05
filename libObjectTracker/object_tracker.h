@@ -58,12 +58,16 @@ namespace cv
   //
   struct CV_EXPORTS ObjectTrackerParams
   {
-    enum { CV_ONLINEBOOSTING=100, CV_ONLINEMIL=101, CV_LINEMOD=102 };
+    enum { CV_ONLINEBOOSTING=100, CV_SEMIONLINEBOOSTING, CV_ONLINEMIL, CV_LINEMOD };
 
     ObjectTrackerParams();
-    ObjectTrackerParams(const int algorithm);
+    ObjectTrackerParams(const int algorithm, const int num_classifiers,
+      const float overlap, const float search_factor);
 
-    int algorithm_;  // CV_ONLINEBOOSTING, CV_ONLINEMIL, CV_LINEMOD, etc...
+    int algorithm_;  // CV_ONLINEBOOSTING, CV_SEMIONLINEBOOSTING, CV_ONLINEMIL, CV_LINEMOD
+    int num_classifiers_;  // the number of classifiers to use in a given boosting algorithm (OnlineBoosting, MIL)
+    float overlap_;  // search region parameters to use in a given boosting algorithm (OnlineBoosting, MIL)
+    float search_factor_;  // search region parameters to use in a given boosting algorithm (OnlineBoosting, MIL)
   };
 
   //
@@ -83,6 +87,14 @@ namespace cv
 
     virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
       CvRect* track_box, IplImage* likelihood = NULL) = 0;
+
+  protected:
+    // A method to import an image to the type desired for the current algorithm
+    virtual void import_image(const IplImage* image) = 0;
+
+    // A local image holder (can be gray-scale, color, depth image 16-bit, whatever
+    // you want...)
+    IplImage* image_;
   };
 
   //
@@ -106,6 +118,72 @@ namespace cv
 
     virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
       CvRect* track_box, IplImage* likelihood = NULL);
+
+  protected:
+    // A method to import an image to the type desired for the current algorithm
+    virtual void import_image(const IplImage* image);
+
+    // Convert an OpenCV CvRect object to an internal boosting::Rect object, 
+    // for convenience (and vice versa)
+    boosting::Rect cvrect_to_rect(const CvRect& in);
+    CvRect rect_to_cvrect(const boosting::Rect& in);
+
+  private:
+    // The main boosting tracker object
+    boosting::BoostingTracker* tracker_;
+
+    // The main image frame representation, useful for the boosting tracker
+    boosting::ImageRepresentation* cur_frame_rep_;
+
+    // The overall tracking rectangle region-of-interesting
+    boosting::Size tracking_rect_size_;
+
+    // Keep track of whether or not the tracker has been lost on a given frame
+    bool tracker_lost_;
+  };
+
+  //
+  //
+  //
+
+  // A speficic instance of a tracking algorithm: Semi-Online Boosting as described
+  // in the following paper:
+  //
+  // ... need to look-up reference ...
+  //
+  class CV_EXPORTS SemiOnlineBoostingAlgorithm : public TrackingAlgorithm
+  {
+  public:
+    SemiOnlineBoostingAlgorithm();
+    ~SemiOnlineBoostingAlgorithm();
+
+    virtual bool initialize(const IplImage* image, const ObjectTrackerParams& params, 
+      const CvRect& init_bounding_box);
+
+    virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
+      CvRect* track_box, IplImage* likelihood = NULL);
+
+  protected:
+    // A method to import an image to the type desired for the current algorithm
+    virtual void import_image(const IplImage* image);
+
+    // Convert an OpenCV CvRect object to an internal boosting::Rect object, 
+    // for convenience (and vice versa)
+    boosting::Rect cvrect_to_rect(const CvRect& in);
+    CvRect rect_to_cvrect(const boosting::Rect& in);
+
+  private:
+    // The main boosting tracker object
+    boosting::SemiBoostingTracker* tracker_;
+
+    // The main image frame representation, useful for the boosting tracker
+    boosting::ImageRepresentation* cur_frame_rep_;
+
+    // The overall tracking rectangle region-of-interesting
+    boosting::Size tracking_rect_size_;
+
+    // Keep track of whether or not the tracker has been lost on a given frame
+    bool tracker_lost_;
   };
 
   //
@@ -129,6 +207,10 @@ namespace cv
 
     virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
       CvRect* track_box, IplImage* likelihood = NULL);
+
+  protected:
+    // A method to import an image to the type desired for the current algorithm
+    virtual void import_image(const IplImage* image);
   };
 
   //
@@ -151,6 +233,10 @@ namespace cv
 
     virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
       CvRect* track_box, IplImage* likelihood = NULL);
+
+  protected:
+    // A method to import an image to the type desired for the current algorithm
+    virtual void import_image(const IplImage* image);
   };
 
   //
