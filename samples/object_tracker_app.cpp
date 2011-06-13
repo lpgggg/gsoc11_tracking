@@ -11,11 +11,17 @@ int main(int argc, char** argv)
 {
   // Setup the parameters to use OnlineBoosting as the underlying tracking algorithm
   cv::ObjectTrackerParams params;
+#if 1
   params.algorithm_ = cv::ObjectTrackerParams::CV_ONLINEBOOSTING;
   //params.algorithm_ = cv::ObjectTrackerParams::CV_SEMIONLINEBOOSTING;
   params.num_classifiers_ = 100;
   params.overlap_ = 0.99f;
   params.search_factor_ = 2;
+#else
+  params.algorithm_ = cv::ObjectTrackerParams::CV_ONLINEMIL;
+  params.num_classifiers_ = 50;
+  params.num_features_ = 250;
+#endif
 
   // Instantiate an object tracker
   cv::ObjectTracker tracker(params);

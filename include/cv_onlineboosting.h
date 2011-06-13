@@ -72,10 +72,10 @@
 #include <stdint.h>
 #include <QtCore>
 
-//typedef int32_t __int32;
-//typedef int32_t __int64;
-//typedef uint32_t  __uint32;
-//typedef uint64_t  __uint64;
+typedef int32_t __int32;
+typedef int32_t __int64;
+typedef uint32_t  __uint32;
+typedef uint64_t  __uint64;
 
 //MAX_PATH variable used by helmut
 #ifdef MAX_PATH /* Work-around for Mingw */

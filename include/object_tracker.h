@@ -42,7 +42,7 @@
 
 #include <cv.h>
 #include "cv_onlineboosting.h"
-//#include "cv_onlinemil.h"
+#include "cv_onlinemil.h"
 //#include "cv_linemod.h"
 
 
@@ -62,12 +62,18 @@ namespace cv
 
     ObjectTrackerParams();
     ObjectTrackerParams(const int algorithm, const int num_classifiers,
-      const float overlap, const float search_factor);
+      const float overlap, const float search_factor, const float pos_radius_train,
+      const int neg_num_train, const int num_features);
 
     int algorithm_;  // CV_ONLINEBOOSTING, CV_SEMIONLINEBOOSTING, CV_ONLINEMIL, CV_LINEMOD
     int num_classifiers_;  // the number of classifiers to use in a given boosting algorithm (OnlineBoosting, MIL)
     float overlap_;  // search region parameters to use in a given boosting algorithm (OnlineBoosting, MIL)
     float search_factor_;  // search region parameters to use in a given boosting algorithm (OnlineBoosting, MIL)
+    
+    // The following are specific to the MIL algorithm
+    float pos_radius_train_;  // radius for gathering positive instances
+    int neg_num_train_; // # negative samples to use during training
+    int num_features_;
   };
 
   //
@@ -211,6 +217,16 @@ namespace cv
   protected:
     // A method to import an image to the type desired for the current algorithm
     virtual void import_image(const IplImage* image);
+
+  private:
+    // The main Online MIL tracker
+    cv::mil::SimpleTracker tracker_;
+    cv::mil::SimpleTrackerParams tracker_params_;
+    cv::mil::ClfStrongParams* clfparams_;
+
+    // Feature parameters
+    cv::mil::FtrParams* ftrparams_;
+    cv::mil::HaarFtrParams haarparams_;
   };
 
   //

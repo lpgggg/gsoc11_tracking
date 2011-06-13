@@ -56,11 +56,17 @@ namespace cv
     // Default search region parameters for boosting algorithms
     overlap_ = 0.99f;
     search_factor_ = 2.0f;
+
+    // Defaults for MIL tracker
+    pos_radius_train_ = 4.0f;
+    neg_num_train_ = 65;
+    num_features_ = 250;
   }
 
   //---------------------------------------------------------------------------
   ObjectTrackerParams::ObjectTrackerParams(const int algorithm, const int num_classifiers,
-    const float overlap, const float search_factor)
+    const float overlap, const float search_factor, const float pos_radius_train,
+      const int neg_num_train, const int num_features)
   {
     // Make sure a valid algorithm flag is used before storing it
     if ( (algorithm != CV_ONLINEBOOSTING) && (algorithm != CV_SEMIONLINEBOOSTING) && (algorithm != CV_ONLINEMIL) && (algorithm != CV_LINEMOD) )
@@ -78,6 +84,11 @@ namespace cv
     // Store information about the searching 
     overlap_ = overlap;
     search_factor_ = search_factor;
+
+    // MIL parameters
+    pos_radius_train_ = pos_radius_train;
+    neg_num_train_ = neg_num_train;
+    num_features_ = num_features;
   }
 
   //
@@ -446,17 +457,58 @@ namespace cv
   OnlineMILAlgorithm::OnlineMILAlgorithm() 
     : TrackingAlgorithm()
   {
+    cv::mil::randinitalize((int)time(0));
+    clfparams_ = new cv::mil::ClfMilBoostParams();
+    ftrparams_ = &haarparams_;
+    clfparams_->_ftrParams	= ftrparams_;
   }
 
   //---------------------------------------------------------------------------
   OnlineMILAlgorithm::~OnlineMILAlgorithm()
   {
+    delete clfparams_;
   }
 
   //---------------------------------------------------------------------------
   bool OnlineMILAlgorithm::initialize(const IplImage* image, const ObjectTrackerParams& params, 
     const CvRect& init_bounding_box)
   {
+    import_image(image);
+
+    ((cv::mil::ClfMilBoostParams*)clfparams_)->_numSel	= params.num_classifiers_;
+    ((cv::mil::ClfMilBoostParams*)clfparams_)->_numFeat = params.num_features_;
+    tracker_params_._posradtrain = params.pos_radius_train_;
+    tracker_params_._negnumtrain = params.neg_num_train_;
+
+    // Tracking parameters
+    tracker_params_._init_negnumtrain = 65;
+    tracker_params_._init_postrainrad = 3.0f;
+    tracker_params_._initstate[0]	= (float)init_bounding_box.x;
+    tracker_params_._initstate[1]	= (float)init_bounding_box.y;
+    tracker_params_._initstate[2]	= (float)init_bounding_box.width;
+    tracker_params_._initstate[3]	= (float)init_bounding_box.height;
+    tracker_params_._srchwinsz		= 25;
+    tracker_params_._negsamplestrat = 1;
+    tracker_params_._initWithFace	= false;
+    tracker_params_._debugv		= false;
+    tracker_params_._disp			= false; // set this to true if you want to see video output (though it slows things down)
+
+    clfparams_->_ftrParams->_width	= (cv::mil::uint)init_bounding_box.width;
+    clfparams_->_ftrParams->_height	= (cv::mil::uint)init_bounding_box.height;
+
+    cv::mil::Matrixu video_frame(image_->height, image_->width, 1); 
+    for (int y = 0; y < image_->height; y++)
+    {
+      const unsigned char* pSrc = (unsigned char*)image_->imageData + y*image_->widthStep;
+      unsigned char* pDst = video_frame.getRow<unsigned char>(y);
+      for (int x = 0; x < image_->width; x++, pSrc++, pDst++)
+      {
+        //video_frame(y,x) = *pSrc;
+        *pDst = *pSrc;
+      }
+    }
+    tracker_.init(video_frame, tracker_params_, clfparams_);
+    
     // Return success
     return true;
   }
@@ -465,6 +517,25 @@ namespace cv
   bool OnlineMILAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
     CvRect* track_box)
   {
+    import_image(image);
+    cv::mil::Matrixu video_frame(image_->height, image_->width, 1); 
+    for (int y = 0; y < image_->height; y++)
+    {
+      const unsigned char* pSrc = (unsigned char*)image_->imageData + y*image_->widthStep;
+      unsigned char* pDst = video_frame.getRow<unsigned char>(y);
+      for (int x = 0; x < image_->width; x++, pSrc++, pDst++)
+      {
+        //video_frame(y,x) = *pSrc;
+        *pDst = *pSrc;
+      }
+    }
+
+    // Update tracker
+    tracker_.track_frame(video_frame);
+
+    // Save output
+    tracker_.getTrackBox(track_box);
+
     // Return success
     return true;
   }
@@ -472,6 +543,43 @@ namespace cv
   //---------------------------------------------------------------------------
   void OnlineMILAlgorithm::import_image(const IplImage* image)
   {
+    // We want the internal version of the image to be gray-scale, so let's
+    // do that here.  We'll handle cases where the input is either RGB, RGBA,
+    // or already gray-scale.  I assume it's already 8-bit.  If not then 
+    // an error is thrown.  I'm not going to deal with converting properly
+    // from every data type since that shouldn't be happening.
+
+    // Make sure the input image pointer is valid
+    if (image == NULL)
+    {
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
+      exit(0);  // <--- CV_ERROR?
+    }
+
+    // First, make sure our image is allocated
+    if (image_ == NULL)
+    {
+      image_ = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+    }
+
+    // Now copy it in appropriately as a gray-scale, 8-bit image
+    if (image->nChannels == 4)
+    {
+      cvCvtColor(image, image_, CV_RGBA2GRAY);
+    }
+    else if (image->nChannels == 3)
+    {
+      cvCvtColor(image, image_, CV_RGB2GRAY);
+    }
+    else if (image->nChannels == 1)
+    {
+      cvCopy(image, image_);
+    }
+    else
+    {
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n" << std::endl;
+      exit(0);
+    }
   }
 
   //

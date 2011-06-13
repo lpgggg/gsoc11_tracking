@@ -12,7 +12,7 @@ FIND_PACKAGE( OpenCV REQUIRED )
 # :TODO:
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 
-add_library(libObjectTracking src/cv_onlineboosting.cpp include/cv_onlineboosting.h src/object_tracker.cpp include/object_tracker.h)
+add_library(libObjectTracking src/cv_onlineboosting.cpp include/cv_onlineboosting.h src/cv_onlinemil.cpp include/cv_onlinemil.h src/object_tracker.cpp include/object_tracker.h)
 include_directories(include)
 
 add_executable(ObjectTrackingApp samples/object_tracker_app.cpp)
