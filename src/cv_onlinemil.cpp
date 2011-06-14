@@ -45,7 +45,6 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include <direct.h>
 #include <list>
 #include <math.h>
 
@@ -1291,7 +1290,7 @@ namespace cv
       assert(size() > 0);
       createIpl();
       char name[1024]; 
-      sprintf_s(name,"Figure %d",fignum);
+      sprintf(name,"Figure %d",fignum);
       cvNamedWindow( name, 0/*CV_WINDOW_AUTOSIZE*/ );
       cvShowImage( name, _iplimg );
       cvResizeWindow( name, std::max<int>(static_cast<int>(static_cast<float>(_cols)*p),200), 
@@ -1444,7 +1443,7 @@ namespace cv
       char fname[1024];
 
       for( uint k=0; k<imgs.size(); k++ ){
-        sprintf_s(fname,"%s/img%05d.png",dirname,k);
+        sprintf(fname,"%s/img%05d.png",dirname,k);
         if( resize == 1.0f )
           imgs[k].SaveImage(fname);
         else{
@@ -1711,7 +1710,7 @@ namespace cv
       char fname[1024];
       Matrixu img;
       for( uint k=0; k<ftrs.size(); k++ ){
-        sprintf_s(fname,"%s/ftr%05d.png",dirname,k);
+        sprintf(fname,"%s/ftr%05d.png",dirname,k);
         img = ftrs[k]->toViz();
         img.SaveImage(fname);
       }

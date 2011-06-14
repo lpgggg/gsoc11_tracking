@@ -357,11 +357,11 @@ namespace cv
       inline char* ElapsedStr(bool restart=false) { 
         if(running) Stop();
         if( totaltime < 60.0f )
-          sprintf_s( totaltimeStr, "%5.2fs", totaltime );
+          sprintf( totaltimeStr, "%5.2fs", totaltime );
         else if( totaltime < 3600.0f )
-          sprintf_s( totaltimeStr, "%5.2fm", totaltime/60.0f );
+          sprintf( totaltimeStr, "%5.2fm", totaltime/60.0f );
         else 
-          sprintf_s( totaltimeStr, "%5.2fh", totaltime/3600.0f );
+          sprintf( totaltimeStr, "%5.2fh", totaltime/3600.0f );
         if(restart) Start();
         return totaltimeStr; 
       }
@@ -984,9 +984,9 @@ namespace cv
         if( j>0 ) os << "  ";
         for (int i=0; i<x.cols(); i++) {
           if( typeid(T) == typeid(uchar) )
-            sprintf_s(tmp,"%3d",(int)x(j,i));
+            sprintf(tmp,"%3d",(int)x(j,i));
           else
-            sprintf_s(tmp,"%02.2f",(float)x(j,i));
+            sprintf(tmp,"%02.2f",(float)x(j,i));
           os << tmp << " ";
         }
         if( j!=x.rows()-1 )
@@ -1147,8 +1147,8 @@ namespace cv
       char format[1024];
       char fname[1024];
       for( int k=start; k<=end; k++ ){
-        sprintf_s(format,"%s/%s%%0%ii.%s",dirname,basename,digits,ext);
-        sprintf_s(fname,format,k);
+        sprintf(format,"%s/%s%%0%ii.%s",dirname,basename,digits,ext);
+        sprintf(fname,format,k);
         res[k-start].LoadImage(fname, color);
       }
 
