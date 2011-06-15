@@ -473,6 +473,8 @@ namespace cv
 			int			depth() const { return _depth; };
 			uint		size() const { return _cols*_rows; };
 			int			length() const { return max(_cols,_rows); };
+
+      void setData(const T* inDataPtr, const int channel);
 			
 			//Matrix<T>& operator= ( const vector<T> &x )
 			//vector<T>	toVec();
@@ -642,6 +644,20 @@ namespace cv
 				res(k,k) = 1;
 			return res;
 		}
+    
+    template<class T>
+    void Matrix<T>::setData(const T* inDataPtr, const int channel)
+    {
+      if( typeid(T) == typeid(uchar) )
+      {
+        ippiCopy_8u_C1R((unsigned char*)inDataPtr, _dataStep, (unsigned char*)_data[channel], _dataStep, _roi);
+      }
+      else
+      {
+        ippiCopy_32f_C1R((float*)inDataPtr, _dataStep, (float*)_data[channel], _dataStep, _roi);
+      }
+    }
+
 		template<class T> void				Matrix<T>::Resize(uint rows, uint cols, uint depth) 
 		{
 			if( rows<0 || cols<0 )

@@ -155,7 +155,9 @@ namespace cv
   // A speficic instance of a tracking algorithm: Semi-Online Boosting as described
   // in the following paper:
   //
-  // ... need to look-up reference ...
+  // H. Grabner, C. Leistner, and H. Bischof.  "Semi-supervised On-line Boosting for 
+  // Robust Tracking", In Proceedings European Conference on Computer Vision (ECCV), 
+  // 2008.
   //
   class CV_EXPORTS SemiOnlineBoostingAlgorithm : public TrackingAlgorithm
   {
@@ -227,6 +229,9 @@ namespace cv
     // Feature parameters
     cv::mil::FtrParams* ftrparams_;
     cv::mil::HaarFtrParams haarparams_;
+
+    // A copy of the image frame for use with the MIL algorithm
+    cv::mil::Matrixu* video_frame_;
   };
 
   //

@@ -461,12 +461,17 @@ namespace cv
     clfparams_ = new cv::mil::ClfMilBoostParams();
     ftrparams_ = &haarparams_;
     clfparams_->_ftrParams	= ftrparams_;
+    video_frame_ = NULL;
   }
 
   //---------------------------------------------------------------------------
   OnlineMILAlgorithm::~OnlineMILAlgorithm()
   {
     delete clfparams_;
+    if (video_frame_ != NULL)
+    {
+      delete video_frame_;
+    }
   }
 
   //---------------------------------------------------------------------------
@@ -496,18 +501,25 @@ namespace cv
     clfparams_->_ftrParams->_width	= (cv::mil::uint)init_bounding_box.width;
     clfparams_->_ftrParams->_height	= (cv::mil::uint)init_bounding_box.height;
 
-    cv::mil::Matrixu video_frame(image_->height, image_->width, 1); 
+    if (video_frame_ == NULL)
+    {
+      video_frame_ = new cv::mil::Matrixu(image_->height, image_->width, 1); 
+    }
+
+#if 1
+    video_frame_->setData((unsigned char*)image_->imageData, 0);
+#else
     for (int y = 0; y < image_->height; y++)
     {
       const unsigned char* pSrc = (unsigned char*)image_->imageData + y*image_->widthStep;
-      unsigned char* pDst = video_frame.getRow<unsigned char>(y);
+      unsigned char* pDst = video_frame_->getRow<unsigned char>(y);
       for (int x = 0; x < image_->width; x++, pSrc++, pDst++)
       {
-        //video_frame(y,x) = *pSrc;
         *pDst = *pSrc;
       }
     }
-    tracker_.init(video_frame, tracker_params_, clfparams_);
+#endif
+    tracker_.init(*video_frame_, tracker_params_, clfparams_);
     
     // Return success
     return true;
@@ -517,21 +529,29 @@ namespace cv
   bool OnlineMILAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
     CvRect* track_box)
   {
+    if (video_frame_ == NULL)
+    {
+      std::cerr << "OnlineMILAlgorithm::update() -- Error!  Did not intialize algorithm!\n" << std::endl;
+      return false;
+    }
+
     import_image(image);
-    cv::mil::Matrixu video_frame(image_->height, image_->width, 1); 
+#if 1
+    video_frame_->setData((unsigned char*)image_->imageData, 0);
+#else
     for (int y = 0; y < image_->height; y++)
     {
       const unsigned char* pSrc = (unsigned char*)image_->imageData + y*image_->widthStep;
-      unsigned char* pDst = video_frame.getRow<unsigned char>(y);
+      unsigned char* pDst = video_frame_->getRow<unsigned char>(y);
       for (int x = 0; x < image_->width; x++, pSrc++, pDst++)
       {
-        //video_frame(y,x) = *pSrc;
         *pDst = *pSrc;
       }
     }
+#endif
 
     // Update tracker
-    tracker_.track_frame(video_frame);
+    tracker_.track_frame(*video_frame_);
 
     // Save output
     tracker_.getTrackBox(track_box);
