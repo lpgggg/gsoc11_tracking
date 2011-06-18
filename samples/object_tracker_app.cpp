@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 {
   // Setup the parameters to use OnlineBoosting as the underlying tracking algorithm
   cv::ObjectTrackerParams params;
-#if 0
+#if 1
   params.algorithm_ = cv::ObjectTrackerParams::CV_ONLINEBOOSTING;
   //params.algorithm_ = cv::ObjectTrackerParams::CV_SEMIONLINEBOOSTING;
   params.num_classifiers_ = 100;
@@ -27,7 +27,7 @@ int main(int argc, char** argv)
   cv::ObjectTracker tracker(params);
 
   // Read in a sequence of images from disk as the video source
-  const char* directory = "../data/David";
+  const char* directory = "data/david";
   const int start = 1;
   const int stop = 462;
   const int delta = 1;

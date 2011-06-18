@@ -562,8 +562,8 @@ namespace cv
 			static Matrix<T>		vecMat2Mat(const std::vector<Matrix<T> > &x);
 			static std::vector<Matrix<T> >	vecMatTranspose(const std::vector<Matrix<T> > &x);
 			
-			bool		DLMRead( const char *fname, char *delim="," ); // compatible with Matlab dlmread & dlmwrite
-			bool		DLMWrite( const char *fname, char *delim="," );
+			bool		DLMRead( const char *fname, const char *delim="," ); // compatible with Matlab dlmread & dlmwrite
+			bool		DLMWrite( const char *fname, const char *delim="," );
 			
 			void		display(int fignum, float p=1.0f);
 			
@@ -1423,7 +1423,7 @@ namespace cv
 			
 			return t;
 		}
-		template<class T> bool				Matrix<T>::DLMWrite( const char *fname, char *delim )
+		template<class T> bool				Matrix<T>::DLMWrite( const char *fname, const char *delim )
 		{
 			remove( fname ); 
 			std::ofstream strm; strm.open(fname, std::ios::out);
@@ -1440,7 +1440,7 @@ namespace cv
 			strm.close();
 			return true;
 		}
-		template<class T> bool				Matrix<T>::DLMRead( const char *fname, char *delim )
+		template<class T> bool				Matrix<T>::DLMRead( const char *fname, const char *delim )
 		{
 		  std::ifstream strm; strm.open(fname, std::ios::in);
 			if( strm.fail() ) return false;
@@ -2192,7 +2192,7 @@ namespace cv
 		public:
 			
 			static bool		initFace(TrackerParams* params, Matrixu &frame);
-			static void		replayTracker(vector<Matrixu> &vid, string states, string outputvid="",uint R=255, uint G=0, uint B=0);
+			static void		replayTracker(vector<Matrixu> &vid, const string states, string outputvid="",uint R=255, uint G=0, uint B=0);
 			static void		replayTrackers(vector<Matrixu> &vid, vector<string> statesfile, string outputvid, Matrixu colors);
 			
 		protected:

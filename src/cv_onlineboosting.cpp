@@ -45,9 +45,13 @@
 #include <math.h>
 #include <iostream>
 
+#ifndef M_PI
 #define M_PI (3.14159265358979323846)
-#define FLOAT_MAX 3.4e38f
-#define FLOAT_MIN 1.2e-38f
+#endif
+
+#include <float.h>
+//#define FLOAT_MAX 3.4e38f
+//#define FLOAT_MIN 1.2e-38f
 #define sign(x) (((x)>=0)? 1.0f : -1.0f)
 
 #include <stdio.h>
@@ -1692,7 +1696,7 @@ namespace cv
 
     int BaseClassifier::selectBestClassifier(bool* errorMask, float importance, float* errors) 
     {
-      float minError = FLOAT_MAX;
+      float minError = FLT_MAX;
       int tmp_selectedClassifier = m_selectedClassifier;
 
       for (int curWeakClassifier = 0; curWeakClassifier < m_numWeakClassifier+m_iterationInit; curWeakClassifier++)
@@ -1706,7 +1710,7 @@ namespace cv
           m_wCorrect[curWeakClassifier] += importance;
         }
 
-        if (errors[curWeakClassifier]==FLOAT_MAX)
+        if (errors[curWeakClassifier]==FLT_MAX)
           continue;
 
         errors[curWeakClassifier] = m_wWrong[curWeakClassifier]/
@@ -1741,7 +1745,7 @@ namespace cv
     {
       for (int curWeakClassifier = 0; curWeakClassifier < m_numWeakClassifier+m_iterationInit; curWeakClassifier++)
       {	
-        if (errors[curWeakClassifier]==FLOAT_MAX)
+        if (errors[curWeakClassifier]==FLT_MAX)
           continue;
 
         errors[curWeakClassifier] = m_wWrong[curWeakClassifier]/
@@ -1955,13 +1959,13 @@ namespace cv
         //sum up errors
         for (int curWeakClassifier = 0; curWeakClassifier<numAllWeakClassifier; curWeakClassifier++)
         {
-          if (m_errors[curWeakClassifier]!=FLOAT_MAX && m_sumErrors[curWeakClassifier]>=0)
+          if (m_errors[curWeakClassifier]!=FLT_MAX && m_sumErrors[curWeakClassifier]>=0)
             m_sumErrors[curWeakClassifier]+= m_errors[curWeakClassifier];
         }
 
         //mark feature as used
         m_sumErrors[selectedClassifier] = -1;
-        m_errors[selectedClassifier] = FLOAT_MAX;
+        m_errors[selectedClassifier] = FLT_MAX;
       }
 
       if (useFeatureExchange)
@@ -2137,7 +2141,7 @@ namespace cv
 
       m_confidences = NULL;
       m_sizeConfidences = 0;
-      m_maxConfidence = -FLOAT_MAX;
+      m_maxConfidence = -FLT_MAX;
       m_numDetections = 0;
       m_idxDetections = NULL;
       m_idxBestDetection = -1;
@@ -2193,7 +2197,7 @@ namespace cv
 
       m_numDetections = 0;
       m_idxBestDetection = -1;
-      m_maxConfidence = -FLOAT_MAX;
+      m_maxConfidence = -FLT_MAX;
       int numBaseClassifiers = m_classifier->getNumBaseClassifier();
 
       for (int curPatch=0; curPatch < numPatches; curPatch++)
@@ -2226,7 +2230,7 @@ namespace cv
 
       m_numDetections = 0;
       m_idxBestDetection = -1;
-      m_maxConfidence = -FLOAT_MAX;
+      m_maxConfidence = -FLT_MAX;
       int numBaseClassifiers = m_classifier->getNumBaseClassifier();
 
       PatchesRegularScan *regPatches = (PatchesRegularScan*)patches;

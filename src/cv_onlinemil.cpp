@@ -2008,7 +2008,7 @@ namespace cv
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
-		void			Tracker::replayTracker(vector<Matrixu> &vid, std::string statesfile, std::string outputvid, uint R, uint G, uint B)
+		void			Tracker::replayTracker(vector<Matrixu> &vid, const std::string statesfile, std::string outputvid, uint R, uint G, uint B)
 		{
 			Matrixf states;
 			states.DLMRead(statesfile.c_str());
