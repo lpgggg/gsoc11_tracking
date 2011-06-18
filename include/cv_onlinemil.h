@@ -47,6 +47,19 @@
 
 #include <iostream>
 #include <fstream>
+#include <float.h>
+
+#if defined(unix)        || defined(__unix)      || defined(__unix__) \
+  || defined(linux)       || defined(__linux)     || defined(__linux__) \
+  || defined(sun)         || defined(__sun) \
+  || defined(BSD)         || defined(__OpenBSD__) || defined(__NetBSD__) \
+  || defined(__FreeBSD__) || defined __DragonFly__ \
+  || defined(sgi)         || defined(__sgi) \
+  || defined(__MACOSX__)  || defined(__APPLE__) \
+  || defined(__CYGWIN__)
+#include <typeinfo>
+#endif
+
 
 
 /** If IPP is included, just use that.  Otherwise, I've included some definitions
@@ -325,7 +338,7 @@ namespace cv
 		}
 		
 		
-		template<class T> ostream&			operator<<(ostream& os, const std::vector<T>& v)
+		template<class T> std::ostream&			operator<<(std::ostream& os, const std::vector<T>& v)
 		{  //display vector
 			os << "[ " ;
 			for (size_t i=0; i<v.size(); i++)
@@ -565,7 +578,7 @@ namespace cv
 			
 		};
 		
-		template<class T> ostream&			operator<< ( ostream& os, const Matrix<T>& x );
+		template<class T> std::ostream&			operator<< ( std::ostream& os, const Matrix<T>& x );
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1180,7 +1193,7 @@ namespace cv
 			
 			return res;
 		}
-		template<class T> ostream&			operator<<(ostream& os, const Matrix<T>& x)
+		template<class T> std::ostream&			operator<<(std::ostream& os, const Matrix<T>& x)
 		{  //display matrix
 			os << "[ ";
 			char tmp[1024];
@@ -1421,7 +1434,7 @@ namespace cv
 					strm << (float)(*this)(r,c);
 					if( c<(cols()-1)) strm << delim;
 				}
-				strm << endl;
+				strm << std::endl;
 			}
 			
 			strm.close();
@@ -1429,7 +1442,7 @@ namespace cv
 		}
 		template<class T> bool				Matrix<T>::DLMRead( const char *fname, char *delim )
 		{
-			ifstream strm; strm.open(fname, std::ios::in);
+		  std::ifstream strm; strm.open(fname, std::ios::in);
 			if( strm.fail() ) return false;
 			char * tline = new char[40000000];
 			
@@ -1439,7 +1452,7 @@ namespace cv
 			while( strtok(NULL," ,")!=NULL ) ncols++;
 			
 			// read in each row
-			strm.seekg( 0, ios::beg ); 
+			strm.seekg( 0, std::ios::beg ); 
 			Matrix<T> *rowVec; std::vector<Matrix<T>*> allRowVecs;
 			while(!strm.eof() && strm.peek()>=0) {
 				strm.getline( tline, 40000000 );
@@ -1911,8 +1924,11 @@ namespace cv
 				_s = sign(_mu1-_mu0);
 				_n0 = 1.0f/pow(_sig0,0.5f);
 				_n1 = 1.0f/pow(_sig1,0.5f);
-				_e1 = -1.0f/(2.0f*_sig1+1e-99f);
-				_e0 = -1.0f/(2.0f*_sig0+1e-99f);
+				//_e1 = -1.0f/(2.0f*_sig1+1e-99f);
+				//_e0 = -1.0f/(2.0f*_sig0+1e-99f);
+				_e1 = -1.0f/(2.0f*_sig1+FLT_MIN);
+				_e0 = -1.0f/(2.0f*_sig0+FLT_MIN);
+
 			}
 			else{
 				_trained = true;
@@ -1930,8 +1946,10 @@ namespace cv
 				_s = sign(_mu1-_mu0);
 				_n0 = 1.0f/pow(_sig0,0.5f);
 				_n1 = 1.0f/pow(_sig1,0.5f);
-				_e1 = -1.0f/(2.0f*_sig1+1e-99f);
-				_e0 = -1.0f/(2.0f*_sig0+1e-99f);
+				//_e1 = -1.0f/(2.0f*_sig1+1e-99f);
+				//_e0 = -1.0f/(2.0f*_sig0+1e-99f);				
+				_e1 = -1.0f/(2.0f*_sig1+FLT_MIN);
+				_e0 = -1.0f/(2.0f*_sig0+FLT_MIN);
 			}
 		}
 		
