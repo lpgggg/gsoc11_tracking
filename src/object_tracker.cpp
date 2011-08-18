@@ -721,31 +721,9 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  void ObjectTracker::reset()
-  {
-    //
-    // Reset the internal state of the tracker: should we just delete and re-allocate
-    // the tracking algorithm object, or do something different?  Do we even really
-    // need this functionality?
-    //
-  }
-
-  //---------------------------------------------------------------------------
   void ObjectTracker::set_params(const ObjectTrackerParams& params)
   {
     tracker_params_ = params;
-  }
-
-  //---------------------------------------------------------------------------
-  void ObjectTracker::save( const char* filename) const
-  {
-  }
-
-  //---------------------------------------------------------------------------
-  bool ObjectTracker::load( const char* filename)
-  {
-    // Return success
-    return true;
   }
 
 }

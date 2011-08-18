@@ -314,22 +314,7 @@ namespace cv
     // -- Do we want to take any other inputs to this function?
     //
     virtual bool update(const IplImage* image, CvRect* track_box);
-    
-    // Reset the state of the tracker.  This means a new initialization will need
-    // to occur in order to track another object.
-    virtual void reset();
 
-    // Save the current state of the tracker.  This allows you to re-load the state of the
-    // tracker at a later point to use what's been learned and apply to a different
-    // video sequence.  Use in conjunction with the load() method below.
-    virtual void save( const char* filename) const;
-
-    // Load a previously-saved state of the tracker (see comments for save() above).
-    // Returns false if the filename is incorrect or the file can't be loaded for
-    // some other reason.  Otherwise returns true upon successful loading.
-    virtual bool load( const char* filename);
-
-  protected:
     // Store the input parameters internally
     void set_params(const ObjectTrackerParams& params);
 

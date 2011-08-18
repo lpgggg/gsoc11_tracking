@@ -58,6 +58,7 @@
 #include <limits>
 
 #include <cv.h>
+#include <omp.h>
 
 
 // MILTRACK
