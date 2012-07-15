@@ -129,11 +129,6 @@ namespace cv
     // A method to import an image to the type desired for the current algorithm
     virtual void import_image(const IplImage* image);
 
-    // Convert an OpenCV CvRect object to an internal boosting::Rect object, 
-    // for convenience (and vice versa)
-    boosting::Rect cvrect_to_rect(const CvRect& in);
-    CvRect rect_to_cvrect(const boosting::Rect& in);
-
   private:
     // The main boosting tracker object
     boosting::BoostingTracker* tracker_;
@@ -174,11 +169,6 @@ namespace cv
   protected:
     // A method to import an image to the type desired for the current algorithm
     virtual void import_image(const IplImage* image);
-
-    // Convert an OpenCV CvRect object to an internal boosting::Rect object, 
-    // for convenience (and vice versa)
-    boosting::Rect cvrect_to_rect(const CvRect& in);
-    CvRect rect_to_cvrect(const boosting::Rect& in);
 
   private:
     // The main boosting tracker object

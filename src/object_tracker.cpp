@@ -163,10 +163,8 @@ namespace cv
     // (Re-)Initialize the boosting tracker
     cv::Size imageSize(image_->width, image_->height);
     cur_frame_rep_ = new boosting::ImageRepresentation((unsigned char*)image_->imageData, imageSize);
-    boosting::Rect wholeImage;
-    wholeImage = imageSize;
-    boosting::Rect tracking_rect = cvrect_to_rect(init_bounding_box);
-    tracking_rect.confidence = 0;
+    cv::Rect wholeImage(0,0,imageSize.width,imageSize.height);
+    cv::Rect tracking_rect = init_bounding_box;
     tracking_rect_size_ = cv::Size(tracking_rect.width, tracking_rect.height);
     tracker_ = new boosting::BoostingTracker(cur_frame_rep_, tracking_rect, wholeImage, params.num_classifiers_);
 
@@ -198,10 +196,9 @@ namespace cv
 
     // Calculate the patches within the search region
     cv::Size imageSize(image_->width, image_->height);
-    boosting::Rect wholeImage(0,0, imageSize.height, imageSize.width);
+    cv::Rect wholeImage(0,0, imageSize.width, imageSize.height);
     boosting::Patches *trackingPatches;	
-    boosting::Rect searchRegion;
-    searchRegion = tracker_->getTrackingROI(params.search_factor_);
+    cv::Rect searchRegion = tracker_->getTrackingROI(params.search_factor_);
     trackingPatches = new boosting::PatchesRegularScan(searchRegion, wholeImage, tracking_rect_size_, params.overlap_);
 
     cur_frame_rep_->setNewImageAndROI((unsigned char*)image_->imageData, searchRegion);
@@ -218,7 +215,7 @@ namespace cv
     delete trackingPatches;
 
     // Save the new tracking ROI
-    *track_box = rect_to_cvrect(tracker_->getTrackedPatch());
+    *track_box = tracker_->getTrackedPatch();
     std::cout << "\rTracking confidence = " << tracker_->getConfidence();
 
     // Return success or failure based on whether or not the tracker has been lost
@@ -266,19 +263,6 @@ namespace cv
       exit(0);
     }
   }
-
-  //---------------------------------------------------------------------------
-  boosting::Rect OnlineBoostingAlgorithm::cvrect_to_rect(const CvRect& in)
-  {
-    return boosting::Rect(in.y, in.x, in.height, in.width);
-  }
-
-  //---------------------------------------------------------------------------
-  CvRect OnlineBoostingAlgorithm::rect_to_cvrect(const boosting::Rect& in)
-  {
-    return cvRect(in.left, in.upper, in.width, in.height);
-  }
-
   //
   //
   //
@@ -331,10 +315,8 @@ namespace cv
     // (Re-)Initialize the boosting tracker
     cv::Size imageSize(image_->width, image_->height);
     cur_frame_rep_ = new boosting::ImageRepresentation((unsigned char*)image_->imageData, imageSize);
-    boosting::Rect wholeImage;
-    wholeImage = imageSize;
-    boosting::Rect tracking_rect = cvrect_to_rect(init_bounding_box);
-    tracking_rect.confidence = 0;
+    cv::Rect wholeImage = cv::Rect(0,0,imageSize.width,imageSize.height);
+    cv::Rect tracking_rect = init_bounding_box;
     tracking_rect_size_ = cv::Size(tracking_rect.width, tracking_rect.height);
     tracker_ = new boosting::SemiBoostingTracker(cur_frame_rep_, tracking_rect, wholeImage, params.num_classifiers_);
 
@@ -366,11 +348,9 @@ namespace cv
 
     // Calculate the patches within the search region
     cv::Size imageSize(image_->width, image_->height);
-    boosting::Rect wholeImage;
-    wholeImage = imageSize;
+    cv::Rect wholeImage = cv::Rect(0,0,imageSize.width,imageSize.height);
     boosting::Patches *trackingPatches;	
-    boosting::Rect searchRegion;
-    searchRegion = tracker_->getTrackingROI(params.search_factor_);
+    cv::Rect searchRegion = tracker_->getTrackingROI(params.search_factor_);
     trackingPatches = new boosting::PatchesRegularScan(searchRegion, wholeImage, tracking_rect_size_, params.overlap_);
 
     cur_frame_rep_->setNewImageAndROI((unsigned char*)image_->imageData, searchRegion);
@@ -387,7 +367,7 @@ namespace cv
     delete trackingPatches;
 
     // Save the new tracking ROI
-    *track_box = rect_to_cvrect(tracker_->getTrackedPatch());
+    *track_box = tracker_->getTrackedPatch();
     std::cout << "\rTracking confidence = " << tracker_->getConfidence();
 
     // Return success or failure based on whether or not the tracker has been lost
@@ -434,18 +414,6 @@ namespace cv
       std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n" << std::endl;
       exit(0);
     }
-  }
-
-  //---------------------------------------------------------------------------
-  boosting::Rect SemiOnlineBoostingAlgorithm::cvrect_to_rect(const CvRect& in)
-  {
-    return boosting::Rect(in.y, in.x, in.height, in.width);
-  }
-
-  //---------------------------------------------------------------------------
-  CvRect SemiOnlineBoostingAlgorithm::rect_to_cvrect(const boosting::Rect& in)
-  {
-    return cvRect(in.left, in.upper, in.width, in.height);
   }
 
   //

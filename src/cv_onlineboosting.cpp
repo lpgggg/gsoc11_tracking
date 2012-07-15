@@ -101,94 +101,28 @@ namespace cv
       }
     }
 
-    Rect::Rect()
-    {
-    }
 
-    Rect::Rect (int upper, int left, int height, int width)
+    cv::Rect RectMultiply(const cv::Rect & rect, float f)
     {
-      this->upper = upper;
-      this->left = left;
-      this->height = height;
-      this->width = width;
-    }
-
-    Rect Rect::operator+ (Rect r)
-    {
-      Rect r_tmp;
-      r_tmp.upper = std::min(upper, r.upper);
-      r_tmp.left = std::min(left, r.left);
-      r_tmp.height = std::max(upper+height, r.upper + r.height) - r_tmp.upper;
-      r_tmp.width = std::max(left+width, r.left+r.width) - r_tmp.left;
-      return r_tmp;
-    }
-
-    Rect Rect::operator* (float f)
-    {
-      Rect r_tmp;
-      r_tmp.upper = (int)(upper-((float)height*f-height)/2);
-      if (r_tmp.upper < 0) r_tmp.upper = 0;
-      r_tmp.left = (int)(left-((float)width*f-width)/2);
-      if (r_tmp.left < 0) r_tmp.left = 0;
-      r_tmp.height = (int)(height*f);
-      r_tmp.width = (int)(width*f);
+      cv::Rect r_tmp;
+      r_tmp.y = (int)(rect.y-((float)rect.height*f-rect.height)/2);
+      if (r_tmp.y < 0) r_tmp.y = 0;
+      r_tmp.x = (int)(rect.x-((float)rect.width*f-rect.width)/2);
+      if (r_tmp.x < 0) r_tmp.x = 0;
+      r_tmp.height = (int)(rect.height*f);
+      r_tmp.width = (int)(rect.width*f);
 
       return r_tmp;
     }
 
-
-    Rect Rect::operator = (Size s)
-    {
-      height = s.height;
-      width = s.width;
-      upper = 0;
-      left = 0;
-      return *this;
-    }
-
-    Rect Rect::operator = (Rect r)
-    {
-      height = r.height;
-      width = r.width;
-      upper = r.upper;
-      left = r.left;
-      return *this;
-    }
-
-    bool Rect::operator== (Rect r)
-    {	
-      return ((r.width == width) && (r.height == height) && (r.upper == upper) && (r.left == left));
-    }
-
-    bool Rect::isValid (Rect validROI)
-    {
-      return (upper >= validROI.upper) &&  (upper <= validROI.upper +validROI.height) &&
-        (left >= validROI.left) && (left <= validROI.left +validROI.width) &&
-        (upper+height >= validROI.upper) && (upper+height <=validROI.upper+validROI.height) &&
-        (left+width >= validROI.left) && (left+width <= validROI.left +validROI.width );
-
-    }
-
-    int Rect::checkOverlap(Rect rect)
-    {	
-      int x = (left > rect.left) ? left : rect.left;
-      int y = (upper > rect.upper) ? upper : rect.upper;
-      int w = (left+width > rect.left+rect.width) ? rect.left+rect.width-x : left+width-x;
-      int h = (upper+height > rect.upper+rect.height) ? rect.upper+rect.height-y : upper+height-y;
-      if (w > 0 && h > 0)
-        return w*h;
-      return 0;
-    }
-
-
-    bool Rect::isDetection(Rect eval, unsigned char *labeledImg, int imgWidth)
+    bool RectIsDetection(const cv::Rect & rect, const cv::Rect & eval, unsigned char *labeledImg, int imgWidth)
     {
       bool isDet = false;
       unsigned char labelEval;
       unsigned char labelDet;
 
-      labelEval = labeledImg[(eval.upper)*imgWidth+eval.left];
-      labelDet = labeledImg[(upper)*imgWidth+left];
+      labelEval = labeledImg[(eval.y)*imgWidth+eval.x];
+      labelDet = labeledImg[(rect.y)*imgWidth+rect.x];
 
       if ((labelEval == labelDet) && (labelDet != 0))
       {
@@ -200,11 +134,6 @@ namespace cv
       }
 
       return isDet;
-    }
-
-    CvRect Rect::getCvRect()
-    {
-      return cvRect(left, upper, width, height);
     }
 
     ImageRepresentation::ImageRepresentation(unsigned char* image, Size imageSize)
@@ -219,7 +148,7 @@ namespace cv
       this->m_imageSize = imageSize;
 
       m_ROI = imageROI;
-      m_offset = cv::Point2i(m_ROI.left, m_ROI.upper);
+      m_offset = cv::Point2i(m_ROI.x, m_ROI.y);
 
       m_useVariance = false;
 
@@ -241,9 +170,9 @@ namespace cv
 
       m_ROI.height = imageSize.height;
       m_ROI.width = imageSize.width;
-      m_ROI.upper = 0;
-      m_ROI.left = 0;
-      m_offset = cv::Point2i(m_ROI.left, m_ROI.upper);
+      m_ROI.y = 0;
+      m_ROI.x = 0;
+      m_offset = cv::Point2i(m_ROI.x, m_ROI.y);
 
       intImage = NULL;
       intSqImage = NULL;
@@ -280,7 +209,7 @@ namespace cv
         intSqImage = new __uint64[(ROI.width+1)*(ROI.height+1)];
       }
       this->m_ROI = ROI;
-      m_offset = cv::Point2i(ROI.left, ROI.upper);
+      m_offset = cv::Point2i(ROI.x, ROI.y);
       return;
     }
 
@@ -305,8 +234,8 @@ namespace cv
     long ImageRepresentation::getSqSum(Rect imageROI)
     {
       // left upper Origin
-      int OriginX = imageROI.left-m_offset.x;
-      int OriginY = imageROI.upper-m_offset.y;
+      int OriginX = imageROI.x-m_offset.x;
+      int OriginY = imageROI.y-m_offset.y;
 
       __uint64 *OriginPtr = &intSqImage[OriginY * (m_ROI.width+1) + OriginX];
 
@@ -346,8 +275,8 @@ namespace cv
     __int32 ImageRepresentation::getSum(Rect imageROI)
     {
       // left upper Origin
-      int OriginX = imageROI.left-m_offset.x;
-      int OriginY = imageROI.upper-m_offset.y;
+      int OriginX = imageROI.x-m_offset.x;
+      int OriginY = imageROI.y-m_offset.y;
 
       __uint32 *OriginPtr = &intImage[OriginY * (m_ROI.width+1) + OriginX];
 
@@ -371,8 +300,8 @@ namespace cv
     float ImageRepresentation::getMean(Rect imageROI)
     {
       // left upper Origin
-      int OriginX = imageROI.left-m_offset.x;
-      int OriginY = imageROI.upper-m_offset.y;
+      int OriginX = imageROI.x-m_offset.x;
+      int OriginY = imageROI.y-m_offset.y;
 
       // Check and fix width and height
       int Width  = imageROI.width;
@@ -405,7 +334,7 @@ namespace cv
       for (rowidx = 0; rowidx<m_ROI.height; rowidx++)
       {
         // current Image Position
-        curPointer = (rowidx+m_ROI.upper)*m_imageSize.width+m_ROI.left;
+        curPointer = (rowidx+m_ROI.y)*m_imageSize.width+m_ROI.x;
 
         // current Integral Image Position
         dptr = (m_ROI.width+1)*(rowidx+1) + 1;
@@ -438,8 +367,8 @@ namespace cv
       patches = new Rect;
       ROI.height = 0;
       ROI.width = 0;
-      ROI.upper = 0;
-      ROI.left = 0;
+      ROI.y = 0;
+      ROI.x = 0;
     }
 
     Patches::Patches(int num)
@@ -448,8 +377,8 @@ namespace cv
       patches = new Rect[num];
       ROI.height = 0;
       ROI.width = 0;
-      ROI.upper = 0;
-      ROI.left = 0;
+      ROI.y = 0;
+      ROI.x = 0;
     }
 
     Patches::~Patches(void)
@@ -473,7 +402,7 @@ namespace cv
       for (int curPatch = 0; curPatch< num; curPatch++)
       {
         Rect curRect = getRect (curPatch);
-        int overlap = curRect.checkOverlap(rect);
+        int overlap = (curRect & rect).area();
         if (overlap > 0)
           return overlap;
       }
@@ -489,7 +418,7 @@ namespace cv
       for (int curPatch = 0; curPatch < num; curPatch++)
       {
         curRect = getRect (curPatch);
-        isDet = curRect.isDetection(eval, labeledImg, imgWidth);
+        isDet = RectIsDetection(curRect, eval, labeledImg, imgWidth);
 
         if (isDet)
         {
@@ -505,8 +434,8 @@ namespace cv
       Rect r;
       r.height = -1;
       r.width = -1;
-      r.upper = -1;
-      r.left = -1;
+      r.y = -1;
+      r.x = -1;
       return r;
     }
 
@@ -515,8 +444,8 @@ namespace cv
       Rect r;
       r.height = -1;
       r.width = -1;
-      r.upper = -1;
-      r.left = -1;
+      r.y = -1;
+      r.x = -1;
       return r;
     }
 
@@ -528,14 +457,14 @@ namespace cv
     void Patches::setCheckedROI(Rect imageROI, Rect validROI)
     {
       int dCol, dRow;
-      dCol = imageROI.left - validROI.left;
-      dRow = imageROI.upper - validROI.upper;
-      ROI.upper = (dRow < 0) ? validROI.upper : imageROI.upper;
-      ROI.left = (dCol < 0) ? validROI.left : imageROI.left;
-      dCol = imageROI.left+imageROI.width - (validROI.left+validROI.width);
-      dRow = imageROI.upper+imageROI.height - (validROI.upper+validROI.height);
-      ROI.height = (dRow > 0) ? validROI.height+validROI.upper-ROI.upper : imageROI.height+imageROI.upper-ROI.upper; 
-      ROI.width = (dCol > 0) ? validROI.width+validROI.left-ROI.left : imageROI.width+imageROI.left-ROI.left; 
+      dCol = imageROI.x - validROI.x;
+      dRow = imageROI.y - validROI.y;
+      ROI.y = (dRow < 0) ? validROI.y : imageROI.y;
+      ROI.x = (dCol < 0) ? validROI.x : imageROI.x;
+      dCol = imageROI.x+imageROI.width - (validROI.x+validROI.width);
+      dRow = imageROI.y+imageROI.height - (validROI.y+validROI.height);
+      ROI.height = (dRow > 0) ? validROI.height+validROI.y-ROI.y : imageROI.height+imageROI.y-ROI.y; 
+      ROI.width = (dCol > 0) ? validROI.width+validROI.x-ROI.x : imageROI.width+imageROI.x-ROI.x; 
     }
 
 
@@ -569,15 +498,15 @@ namespace cv
       patches = new Rect[num];
       int curPatch = 0;
 
-      m_rectUpperLeft = m_rectUpperRight = m_rectLowerLeft = m_rectLowerRight = patchSize;
-      m_rectUpperLeft.upper = ROI.upper;
-      m_rectUpperLeft.left = ROI.left;
-      m_rectUpperRight.upper = ROI.upper;
-      m_rectUpperRight.left = ROI.left+ROI.width-patchSize.width;
-      m_rectLowerLeft.upper = ROI.upper+ROI.height-patchSize.height;
-      m_rectLowerLeft.left = ROI.left;
-      m_rectLowerRight.upper = ROI.upper+ROI.height-patchSize.height;
-      m_rectLowerRight.left = ROI.left+ROI.width-patchSize.width;
+      m_rectUpperLeft = m_rectUpperRight = m_rectLowerLeft = m_rectLowerRight = cv::Rect(0, 0, patchSize.width, patchSize.height);
+      m_rectUpperLeft.y = ROI.y;
+      m_rectUpperLeft.x = ROI.x;
+      m_rectUpperRight.y = ROI.y;
+      m_rectUpperRight.x = ROI.x+ROI.width-patchSize.width;
+      m_rectLowerLeft.y = ROI.y+ROI.height-patchSize.height;
+      m_rectLowerLeft.x = ROI.x;
+      m_rectLowerRight.y = ROI.y+ROI.height-patchSize.height;
+      m_rectLowerRight.x = ROI.x+ROI.width-patchSize.width;
 
 
       numPatchesX=0; numPatchesY=0;
@@ -592,8 +521,8 @@ namespace cv
 
           patches[curPatch].width = patchSize.width;
           patches[curPatch].height = patchSize.height;
-          patches[curPatch].upper = curRow+ROI.upper;
-          patches[curPatch].left = curCol+ROI.left;
+          patches[curPatch].y = curRow+ROI.y;
+          patches[curPatch].x = curCol+ROI.x;
           curPatch++;
         }
       }
@@ -610,8 +539,8 @@ namespace cv
       Rect r;
       r.height = -1;
       r.width = -1;
-      r.upper = -1;
-      r.left = -1;
+      r.y = -1;
+      r.x = -1;
       return r;
     }
 
@@ -705,8 +634,8 @@ namespace cv
           {
             patches[curPatch].width = curPatchSize.width;
             patches[curPatch].height = curPatchSize.height;
-            patches[curPatch].upper = curRow+ROI.upper;
-            patches[curPatch].left = curCol+ROI.left;
+            patches[curPatch].y = curRow+ROI.y;
+            patches[curPatch].x = curCol+ROI.x;
 
             curPatch++;
           }
@@ -728,43 +657,27 @@ namespace cv
       Rect r;
       r.height = -1;
       r.width = -1;
-      r.upper = -1;
-      r.left = -1;
+      r.y = -1;
+      r.x = -1;
       return r;
     }
     Rect PatchesRegularScaleScan::getSpecialRect (const char* what, Size patchSize)
     {		
       if (strcmp(what, "UpperLeft")==0)
       {
-        Rect rectUpperLeft;
-        rectUpperLeft =  patchSize;
-        rectUpperLeft.upper = ROI.upper;
-        rectUpperLeft.left = ROI.left;
-        return rectUpperLeft;
+        return cv::Rect(ROI.x, ROI.y, patchSize.width, patchSize.height);
       }
       if (strcmp(what, "UpperRight")==0) 
       {
-        Rect rectUpperRight;
-        rectUpperRight = patchSize;
-        rectUpperRight.upper = ROI.upper;
-        rectUpperRight.left = ROI.left+ROI.width-patchSize.width;
-        return rectUpperRight;
+        return cv::Rect(ROI.x+ROI.width-patchSize.width, ROI.y, patchSize.width, patchSize.height);
       }
       if (strcmp(what, "LowerLeft")==0)
       {
-        Rect rectLowerLeft;
-        rectLowerLeft = patchSize;
-        rectLowerLeft.upper = ROI.upper+ROI.height-patchSize.height;
-        rectLowerLeft.left = ROI.left;
-        return rectLowerLeft;
+        return cv::Rect(ROI.x, ROI.y+ROI.height-patchSize.height, patchSize.width, patchSize.height);
       }
       if (strcmp(what, "LowerRight")==0)
       {
-        Rect rectLowerRight;
-        rectLowerRight = patchSize;
-        rectLowerRight.upper = ROI.upper+ROI.height-patchSize.height;
-        rectLowerRight.left = ROI.left+ROI.width-patchSize.width;
-        return rectLowerRight;
+        return cv::Rect(ROI.x+ROI.width-patchSize.width, ROI.y+ROI.height-patchSize.height, patchSize.width, patchSize.height);
       }
       if (strcmp(what, "Random")==0)
       {
@@ -903,12 +816,12 @@ namespace cv
           m_weights[0] = 1;
           m_weights[1] = -1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x;
-          m_areas[1].upper = position.y+baseDim.height;
+          m_areas[1].x = position.x;
+          m_areas[1].y = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
           m_initMean = 0;
@@ -935,12 +848,12 @@ namespace cv
           m_weights[0] = 1;
           m_weights[1] = -1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x+baseDim.width;
-          m_areas[1].upper = position.y;
+          m_areas[1].x = position.x+baseDim.width;
+          m_areas[1].y = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
           m_initMean = 0;
@@ -967,16 +880,16 @@ namespace cv
           m_weights[1] = -2;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x;
-          m_areas[1].upper = position.y+baseDim.height;
+          m_areas[1].x = position.x;
+          m_areas[1].y = position.y+baseDim.height;
           m_areas[1].height = 2*baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.y+3*baseDim.height;
-          m_areas[2].left = position.x;
+          m_areas[2].y = position.y+3*baseDim.height;
+          m_areas[2].x = position.x;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 0;
@@ -1002,16 +915,16 @@ namespace cv
           m_weights[1] = -2;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x+baseDim.width;
-          m_areas[1].upper = position.y;
+          m_areas[1].x = position.x+baseDim.width;
+          m_areas[1].y = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = 2*baseDim.width;
-          m_areas[2].upper = position.y;
-          m_areas[2].left = position.x+3*baseDim.width;
+          m_areas[2].y = position.y;
+          m_areas[2].x = position.x+3*baseDim.width;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 0;
@@ -1038,20 +951,20 @@ namespace cv
           m_weights[2] = -1;
           m_weights[3] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x+baseDim.width;
-          m_areas[1].upper = position.y;
+          m_areas[1].x = position.x+baseDim.width;
+          m_areas[1].y = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.y+baseDim.height;
-          m_areas[2].left = position.x;
+          m_areas[2].y = position.y+baseDim.height;
+          m_areas[2].x = position.x;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
-          m_areas[3].upper = position.y+baseDim.height;
-          m_areas[3].left = position.x+baseDim.width;
+          m_areas[3].y = position.y+baseDim.height;
+          m_areas[3].x = position.x+baseDim.width;
           m_areas[3].height = baseDim.height;
           m_areas[3].width = baseDim.width;
           m_initMean = 0;
@@ -1076,12 +989,12 @@ namespace cv
           m_weights[0] = 1;
           m_weights[1] = -9;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = 3*baseDim.height;
           m_areas[0].width = 3*baseDim.width;
-          m_areas[1].left = position.x+baseDim.width;
-          m_areas[1].upper = position.y+baseDim.height;
+          m_areas[1].x = position.x+baseDim.width;
+          m_areas[1].y = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
           m_initMean = -8*128;
@@ -1107,16 +1020,16 @@ namespace cv
           m_weights[1] = -2;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x;
-          m_areas[1].upper = position.y+baseDim.height;
+          m_areas[1].x = position.x;
+          m_areas[1].y = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.y+baseDim.height*2;
-          m_areas[2].left = position.x;
+          m_areas[2].y = position.y+baseDim.height*2;
+          m_areas[2].x = position.x;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 0;
@@ -1144,16 +1057,16 @@ namespace cv
           m_weights[1] = -2;
           m_weights[2] = 1;
           m_areas= new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x+baseDim.width;
-          m_areas[1].upper = position.y;
+          m_areas[1].x = position.x+baseDim.width;
+          m_areas[1].y = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.y;
-          m_areas[2].left = position.x+2*baseDim.width;
+          m_areas[2].y = position.y;
+          m_areas[2].x = position.x+2*baseDim.width;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 0;
@@ -1178,12 +1091,12 @@ namespace cv
           m_weights[0] = 1;
           m_weights[1] = -2;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = 3*baseDim.height;
           m_areas[0].width = 3*baseDim.width;
-          m_areas[1].left = position.x+baseDim.width;
-          m_areas[1].upper = position.y+baseDim.height;
+          m_areas[1].x = position.x+baseDim.width;
+          m_areas[1].y = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
           m_initMean = 0;
@@ -1209,16 +1122,16 @@ namespace cv
           m_weights[1] = -1;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x;
-          m_areas[1].upper = position.y+baseDim.height;
+          m_areas[1].x = position.x;
+          m_areas[1].y = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.y+baseDim.height*2;
-          m_areas[2].left = position.x;
+          m_areas[2].y = position.y+baseDim.height*2;
+          m_areas[2].x = position.x;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 128;
@@ -1244,16 +1157,16 @@ namespace cv
           m_weights[1] = -1;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.x;
-          m_areas[0].upper = position.y;
+          m_areas[0].x = position.x;
+          m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.x+baseDim.width;
-          m_areas[1].upper = position.y;
+          m_areas[1].x = position.x+baseDim.width;
+          m_areas[1].y = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.y;
-          m_areas[2].left = position.x+2*baseDim.width;
+          m_areas[2].y = position.y;
+          m_areas[2].x = position.x+2*baseDim.width;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 128;
@@ -1280,7 +1193,7 @@ namespace cv
     {
       *result = 0.0f;
       cv::Point2i offset;
-      offset = cv::Point2i(ROI.left, ROI.upper);
+      offset = cv::Point2i(ROI.x, ROI.y);
 
       // define the minimum size
       Size minSize = Size(3,3);
@@ -1305,8 +1218,8 @@ namespace cv
               return false;
             }
 
-            m_scaleAreas[curArea].left = (int)floor( (float)m_areas[curArea].left*m_scaleFactorWidth+0.5f);
-            m_scaleAreas[curArea].upper = (int)floor( (float)m_areas[curArea].upper*m_scaleFactorHeight+0.5f);
+            m_scaleAreas[curArea].x = (int)floor( (float)m_areas[curArea].x*m_scaleFactorWidth+0.5f);
+            m_scaleAreas[curArea].y = (int)floor( (float)m_areas[curArea].y*m_scaleFactorHeight+0.5f);
             m_scaleWeights[curArea] = (float)m_weights[curArea] /
               (float)((m_scaleAreas[curArea].width)*(m_scaleAreas[curArea].height));  
           }
@@ -1327,10 +1240,10 @@ namespace cv
 
       for (int curArea = 0; curArea < m_numAreas; curArea++)
       {
-        *result += (float)image->getSum( Rect(m_scaleAreas[curArea].upper+offset .y,
-                                              m_scaleAreas[curArea].left+offset .x,
-                                              m_scaleAreas[curArea].height,
-                                              m_scaleAreas[curArea].width
+        *result += (float)image->getSum( Rect(m_scaleAreas[curArea].x+offset .x,
+                                              m_scaleAreas[curArea].y+offset .y,
+                                              m_scaleAreas[curArea].width,
+                                              m_scaleAreas[curArea].height
                                                   ))*
           m_scaleWeights[curArea];
       }
@@ -2302,12 +2215,12 @@ namespace cv
     {
       Rect searchRegion;
 
-      searchRegion = trackedPatch*(searchFactor);
+      searchRegion = RectMultiply(trackedPatch, searchFactor);
       //check
-      if (searchRegion.upper+searchRegion.height > validROI.height)
-        searchRegion.height = validROI.height-searchRegion.upper;
-      if (searchRegion.left+searchRegion.width > validROI.width)
-        searchRegion.width = validROI.width-searchRegion.left;
+      if (searchRegion.y+searchRegion.height > validROI.height)
+        searchRegion.height = validROI.height-searchRegion.y;
+      if (searchRegion.x+searchRegion.width > validROI.width)
+        searchRegion.width = validROI.width-searchRegion.x;
 
       return searchRegion;
     }
@@ -2325,8 +2238,8 @@ namespace cv
     cv::Point2i BoostingTracker::getCenter()
     {
       cv::Point2i center;
-      center.y = trackedPatch.upper + trackedPatch.height/2 ;
-      center.x =  trackedPatch.left +trackedPatch.width/2 ;
+      center.y = trackedPatch.y + trackedPatch.height/2 ;
+      center.x =  trackedPatch.x +trackedPatch.width/2 ;
       return center;
     }
 
@@ -2461,12 +2374,12 @@ namespace cv
     {
       Rect searchRegion;
 
-      searchRegion = trackedPatch*(searchFactor);
+      searchRegion = RectMultiply(trackedPatch, searchFactor);
       //check
-      if (searchRegion.upper+searchRegion.height > validROI.height)
-        searchRegion.height = validROI.height-searchRegion.upper;
-      if (searchRegion.left+searchRegion.width > validROI.width)
-        searchRegion.width = validROI.width-searchRegion.left;
+      if (searchRegion.y+searchRegion.height > validROI.height)
+        searchRegion.height = validROI.height-searchRegion.y;
+      if (searchRegion.x+searchRegion.width > validROI.width)
+        searchRegion.width = validROI.width-searchRegion.x;
 
       return searchRegion;
     }
@@ -2489,8 +2402,8 @@ namespace cv
     cv::Point2i SemiBoostingTracker::getCenter()
     {
       cv::Point2i center;
-      center.y = trackedPatch.upper + trackedPatch.height/2 ;
-      center.x = trackedPatch.left +trackedPatch.width/2 ;
+      center.y = trackedPatch.y + trackedPatch.height/2 ;
+      center.x = trackedPatch.x +trackedPatch.width/2 ;
       return center;
     }
 

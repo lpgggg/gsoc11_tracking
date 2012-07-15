@@ -127,34 +127,6 @@ namespace cv
       int blue;
     };
 
-    class Rect
-    {
-    public:
-
-      Rect();
-      Rect(int upper, int left, int height, int width);
-
-      int upper;
-      int left;
-      int height;
-      int width;
-
-      float confidence;
-
-      Rect operator+ (Rect r);
-      Rect operator* (float f);
-      Rect operator= (Size s);
-      Rect operator= (Rect r);
-      bool operator== (Rect r);
-      bool isValid (Rect validROI);
-
-      int checkOverlap (Rect rect);
-      int getArea(){return height*width;};
-      bool isDetection(Rect eval, unsigned char *labeledImg, int imgWidth);
-
-      CvRect getCvRect();
-    }; 
-
     class ImageRepresentation  
     {
     public:
