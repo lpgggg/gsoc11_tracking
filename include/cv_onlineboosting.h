@@ -114,8 +114,6 @@ namespace cv
     typedef uint32_t  __uint32;
     typedef uint64_t  __uint64;
 
-    class Size;
-
     class Color
     {
     public: 
@@ -157,24 +155,6 @@ namespace cv
       CvRect getCvRect();
     }; 
 
-    class Size
-    {
-    public:
-
-      Size();
-      Size(int height, int width);
-
-      int height;
-      int width;
-
-      Size operator= (Rect r);
-      Size operator= (Size s);
-      Size operator* (float f);
-      bool operator== (Size s);
-
-      int getArea();
-    };
-
     class ImageRepresentation  
     {
     public:
@@ -187,7 +167,7 @@ namespace cv
       int getSum(Rect imageROI);
       float getMean(Rect imagROI);
       unsigned int getValue(cv::Point2i position);
-      Size getImageSize(void){return m_imageSize;};
+      cv::Size getImageSize(void){return m_imageSize;};
       Rect getImageROI(void){return m_ROI;};
       void setNewImage(unsigned char* image);
       void setNewROI(Rect ROI);
@@ -204,7 +184,7 @@ namespace cv
       bool m_useVariance;
       void createIntegralsOfROI(unsigned char* image);
 
-      Size m_imageSize;
+      cv::Size m_imageSize;
       __uint32* intImage;
       __uint64* intSqImage;
       Rect m_ROI;
@@ -253,7 +233,7 @@ namespace cv
 
       Rect getSpecialRect(const char* what);
       Rect getSpecialRect(const char* what, Size patchSize);
-      Size getPatchGrid(){return m_patchGrid;};
+      cv::Size getPatchGrid(){return m_patchGrid;};
 
     private:
 
@@ -263,7 +243,7 @@ namespace cv
       Rect m_rectUpperRight;
       Rect m_rectLowerLeft;
       Rect m_rectLowerRight;
-      Size m_patchGrid;
+      cv::Size m_patchGrid;
 
     };
 
@@ -319,7 +299,7 @@ namespace cv
       virtual ~PatchesManualSet (void);
 
       Rect getSpecialRect (const char* what){return Rect(-1,-1,-1,-1);} ;
-      Rect getSpecialRect (const char* what, Size patchSize){return Rect(-1,-1,-1,-1);};
+      Rect getSpecialRect (const char* what, cv::Size patchSize){return Rect(-1,-1,-1,-1);};
     };
 
     //#if OS_type==2
@@ -382,8 +362,8 @@ namespace cv
 
       void generateRandomFeature(Size imageSize);
       Rect* m_areas;     // areas within the patch over which to compute the feature
-      Size m_initSize;   // size of the patch used during training
-      Size m_curSize;    // size of the patches currently under investigation
+      cv::Size m_initSize;   // size of the patch used during training
+      cv::Size m_curSize;    // size of the patches currently under investigation
       float m_scaleFactorHeight;  // scaling factor in vertical direction
       float m_scaleFactorWidth;   // scaling factor in horizontal direction
       Rect* m_scaleAreas;// areas after scaling
@@ -531,7 +511,7 @@ namespace cv
       virtual bool update(ImageRepresentation *image, Rect ROI, int target, float importance = 1.0f); 
       virtual bool updateSemi(ImageRepresentation *image, Rect ROI, float priorConfidence);
 
-      Size getPatchSize(){return patchSize;};
+      cv::Size getPatchSize(){return patchSize;};
       int getNumBaseClassifier(){return numBaseClassifier;};
       int getIdxOfSelectedClassifierOfBaseClassifier (int baseClassifierIdx=0){return baseClassifier[baseClassifierIdx]->getIdxOfSelectedClassifier();};
       virtual float getSumAlpha(int toBaseClassifier = -1);
@@ -551,7 +531,7 @@ namespace cv
 
       BaseClassifier** baseClassifier;
       float* alpha;
-      Size patchSize;
+      cv::Size patchSize;
 
       bool useFeatureExchange;
 

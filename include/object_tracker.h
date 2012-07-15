@@ -142,7 +142,7 @@ namespace cv
     boosting::ImageRepresentation* cur_frame_rep_;
 
     // The overall tracking rectangle region-of-interesting
-    boosting::Size tracking_rect_size_;
+    cv::Size tracking_rect_size_;
 
     // Keep track of whether or not the tracker has been lost on a given frame
     bool tracker_lost_;
@@ -188,7 +188,7 @@ namespace cv
     boosting::ImageRepresentation* cur_frame_rep_;
 
     // The overall tracking rectangle region-of-interesting
-    boosting::Size tracking_rect_size_;
+    cv::Size tracking_rect_size_;
 
     // Keep track of whether or not the tracker has been lost on a given frame
     bool tracker_lost_;

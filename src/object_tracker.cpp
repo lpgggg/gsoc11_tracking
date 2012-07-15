@@ -161,13 +161,13 @@ namespace cv
     }
 
     // (Re-)Initialize the boosting tracker
-    boosting::Size imageSize(image_->height, image_->width);
+    cv::Size imageSize(image_->width, image_->height);
     cur_frame_rep_ = new boosting::ImageRepresentation((unsigned char*)image_->imageData, imageSize);
     boosting::Rect wholeImage;
     wholeImage = imageSize;
     boosting::Rect tracking_rect = cvrect_to_rect(init_bounding_box);
     tracking_rect.confidence = 0;
-    tracking_rect_size_ = tracking_rect;
+    tracking_rect_size_ = cv::Size(tracking_rect.width, tracking_rect.height);
     tracker_ = new boosting::BoostingTracker(cur_frame_rep_, tracking_rect, wholeImage, params.num_classifiers_);
 
     // Initialize some useful tracking debugging information
@@ -197,9 +197,8 @@ namespace cv
     }
 
     // Calculate the patches within the search region
-    boosting::Size imageSize(image_->height, image_->width);
-    boosting::Rect wholeImage;
-    wholeImage = imageSize;
+    cv::Size imageSize(image_->width, image_->height);
+    boosting::Rect wholeImage(0,0, imageSize.height, imageSize.width);
     boosting::Patches *trackingPatches;	
     boosting::Rect searchRegion;
     searchRegion = tracker_->getTrackingROI(params.search_factor_);
@@ -330,13 +329,13 @@ namespace cv
     }
 
     // (Re-)Initialize the boosting tracker
-    boosting::Size imageSize(image_->height, image_->width);
+    cv::Size imageSize(image_->width, image_->height);
     cur_frame_rep_ = new boosting::ImageRepresentation((unsigned char*)image_->imageData, imageSize);
     boosting::Rect wholeImage;
     wholeImage = imageSize;
     boosting::Rect tracking_rect = cvrect_to_rect(init_bounding_box);
     tracking_rect.confidence = 0;
-    tracking_rect_size_ = tracking_rect;
+    tracking_rect_size_ = cv::Size(tracking_rect.width, tracking_rect.height);
     tracker_ = new boosting::SemiBoostingTracker(cur_frame_rep_, tracking_rect, wholeImage, params.num_classifiers_);
 
     // Initialize some useful tracking debugging information
@@ -366,7 +365,7 @@ namespace cv
     }
 
     // Calculate the patches within the search region
-    boosting::Size imageSize(image_->height, image_->width);
+    cv::Size imageSize(image_->width, image_->height);
     boosting::Rect wholeImage;
     wholeImage = imageSize;
     boosting::Patches *trackingPatches;	

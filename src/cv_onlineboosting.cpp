@@ -207,49 +207,6 @@ namespace cv
       return cvRect(left, upper, width, height);
     }
 
-    Size::Size()
-    {
-    }
-
-    Size::Size(int height, int width)
-    {
-      this->height = height;
-      this->width = width;
-    }
-
-    Size Size::operator= (Rect r)
-    {
-      height = r.height;
-      width = r.width;
-      return *this;
-    }
-
-    Size Size::operator= (Size s)
-    {
-      height = s.height;
-      width = s.width;
-      return *this;
-    }
-
-    Size Size::operator* (float f)
-    {
-      Size s_tmp;
-      s_tmp.height = (int)(height*f);
-      s_tmp.width = (int)(width *f);
-      return s_tmp;
-    }
-
-
-    bool Size::operator== (Size s)
-    {	
-      return ((s.width == width) && (s.height == height));
-    }
-
-    int Size::getArea()
-    {
-      return height*width;
-    }
-
     ImageRepresentation::ImageRepresentation(unsigned char* image, Size imageSize)
     {  
       // call the default initialization
@@ -329,7 +286,7 @@ namespace cv
 
     void ImageRepresentation::setNewImageSize( Rect ROI )
     {
-      this->m_imageSize = ROI;
+      this->m_imageSize = cv::Size(ROI.width, ROI.height);
     }
 
 
@@ -691,7 +648,7 @@ namespace cv
     }
 
 
-    void PatchesRegularScaleScan::calculatePatches(Rect imageROI, Rect validROI, Size patchSize, float relOverlap, float scaleStart, float scaleEnd, float scaleFactor)
+    void PatchesRegularScaleScan::calculatePatches(Rect imageROI, Rect validROI, cv::Size patchSize, float relOverlap, float scaleStart, float scaleEnd, float scaleFactor)
     {
 
       if ((validROI == imageROI))
@@ -708,7 +665,8 @@ namespace cv
       num = 0;
       for (int curScale = 0; curScale <= numScales; curScale++)
       {   
-        curPatchSize = patchSize * (scaleStart*curScaleFactor);
+        curPatchSize = cv::Size(patchSize.width * (scaleStart*curScaleFactor),
+                                patchSize.height * (scaleStart*curScaleFactor));
         if (curPatchSize.height > ROI.height || curPatchSize.width > ROI.width)
         {
           numScales = curScale-1;
@@ -729,7 +687,8 @@ namespace cv
       curScaleFactor = 1;
       for (int curScale = 0; curScale <= numScales; curScale++)
       {   
-        curPatchSize = patchSize * (scaleStart*curScaleFactor);
+        curPatchSize = cv::Size(patchSize.width * (scaleStart*curScaleFactor),
+                                patchSize.height * (scaleStart*curScaleFactor));
         curScaleFactor *= scaleFactor;
 
         stepCol = (int)floor((1.0f-relOverlap) * (float)curPatchSize.width+0.5f);
@@ -1330,7 +1289,7 @@ namespace cv
 
       if ( m_curSize.width != ROI.width || m_curSize.height != ROI.height )
       {
-        m_curSize = ROI;
+        m_curSize = cv::Size(ROI.width, ROI.height);
         if (!(m_initSize==m_curSize))
         {
           m_scaleFactorHeight = (float)m_curSize.height/m_initSize.height;
@@ -2273,8 +2232,7 @@ namespace cv
       int numWeakClassifier = numBaseClassifier*10;
       bool useFeatureExchange = true;
       int iterationInit = 50;
-      Size patchSize;
-      patchSize = initPatch;
+      cv::Size patchSize(initPatch.width, initPatch.height);
 
       this->validROI = validROI;
 
@@ -2284,8 +2242,7 @@ namespace cv
 
       trackedPatch = initPatch;
       Rect trackingROI = getTrackingROI(2.0f);
-      Size trackedPatchSize;
-      trackedPatchSize = trackedPatch;
+      cv::Size trackedPatchSize(trackedPatch.width, trackedPatch.height);
       Patches* trackingPatches = new PatchesRegularScan(trackingROI, validROI, trackedPatchSize, 0.99f);
 
       iterationInit = 50;
@@ -2378,8 +2335,7 @@ namespace cv
       int numWeakClassifier = 100;
       bool useFeatureExchange = true;
       int iterationInit = 50;
-      Size patchSize;
-      patchSize = initPatch;
+      Size patchSize(initPatch.width, initPatch.height);
 
       this->validROI = validROI;
 
@@ -2391,8 +2347,7 @@ namespace cv
 
       trackedPatch = initPatch;
       Rect trackingROI = getTrackingROI(2.0f);
-      Size trackedPatchSize;
-      trackedPatchSize = trackedPatch;
+      Size trackedPatchSize(trackedPatch.width, trackedPatch.height);
       Patches* trackingPatches = new PatchesRegularScan(trackingROI, validROI, trackedPatchSize, 0.99f);
 
       iterationInit = 50;
