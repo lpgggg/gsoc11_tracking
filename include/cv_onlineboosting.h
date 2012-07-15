@@ -114,7 +114,6 @@ namespace cv
     typedef uint32_t  __uint32;
     typedef uint64_t  __uint64;
 
-    class Point2D;
     class Size;
 
     class Color
@@ -144,9 +143,7 @@ namespace cv
 
       float confidence;
 
-      Rect operator+ (Point2D p);
       Rect operator+ (Rect r);
-      Rect operator- (Point2D p);
       Rect operator* (float f);
       Rect operator= (Size s);
       Rect operator= (Rect r);
@@ -178,24 +175,6 @@ namespace cv
       int getArea();
     };
 
-
-    class Point2D
-    {
-    public:
-
-      Point2D();
-      Point2D(int row, int col);
-
-      int row;
-      int col;
-
-      Point2D operator+ (Point2D p);
-      Point2D operator- (Point2D p);
-      Point2D operator= (Point2D p);
-      Point2D operator= (Rect r);
-
-    };
-
     class ImageRepresentation  
     {
     public:
@@ -207,7 +186,7 @@ namespace cv
 
       int getSum(Rect imageROI);
       float getMean(Rect imagROI);
-      unsigned int getValue(Point2D position);
+      unsigned int getValue(cv::Point2i position);
       Size getImageSize(void){return m_imageSize;};
       Rect getImageROI(void){return m_ROI;};
       void setNewImage(unsigned char* image);
@@ -229,7 +208,7 @@ namespace cv
       __uint32* intImage;
       __uint64* intSqImage;
       Rect m_ROI;
-      Point2D m_offset;
+      cv::Point2i m_offset;
     };
 
     class Patches
@@ -692,7 +671,7 @@ namespace cv
       Rect getTrackingROI(float searchFactor);
       float getConfidence();
       Rect getTrackedPatch();
-      Point2D getCenter();
+      cv::Point2i getCenter();
       const cv::Mat & getConfImageDisplay() const { return detector->getConfImageDisplay(); }
 
     private:
@@ -701,7 +680,7 @@ namespace cv
       Rect validROI;
       Rect trackedPatch;
       float confidence;
-      Point2D dxDy;
+      cv::Point2i dxDy;
     };
 
     class SemiBoostingTracker
@@ -716,7 +695,7 @@ namespace cv
       float getConfidence();
       float getPriorConfidence();
       Rect getTrackedPatch();
-      Point2D getCenter();
+      cv::Point2i getCenter();
       const cv::Mat & getConfImageDisplay() const { return detector->getConfImageDisplay(); }
 
     private:

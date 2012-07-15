@@ -113,16 +113,6 @@ namespace cv
       this->width = width;
     }
 
-    Rect Rect::operator+ (Point2D p)
-    {
-      Rect r_tmp;
-      r_tmp.upper = upper+p.row;
-      r_tmp.left = left+p.col;
-      r_tmp.height = height;
-      r_tmp.width = width;
-      return r_tmp;
-    }
-
     Rect Rect::operator+ (Rect r)
     {
       Rect r_tmp;
@@ -130,16 +120,6 @@ namespace cv
       r_tmp.left = std::min(left, r.left);
       r_tmp.height = std::max(upper+height, r.upper + r.height) - r_tmp.upper;
       r_tmp.width = std::max(left+width, r.left+r.width) - r_tmp.left;
-      return r_tmp;
-    }
-
-    Rect Rect::operator- (Point2D p)
-    {
-      Rect r_tmp;
-      r_tmp.upper = upper-p.row;
-      r_tmp.left = left-p.col;
-      r_tmp.height = height;
-      r_tmp.width = width;
       return r_tmp;
     }
 
@@ -270,46 +250,6 @@ namespace cv
       return height*width;
     }
 
-    Point2D::Point2D ()
-    {
-    }
-
-    Point2D::Point2D (int row, int col)
-    {
-      this->row = row;
-      this->col = col;
-    }
-
-    Point2D Point2D::operator+ (Point2D p)
-    {
-      Point2D p_tmp;
-      p_tmp.col = col+p.col;
-      p_tmp.row = row+p.row;
-      return p_tmp;
-    }
-
-    Point2D Point2D::operator- (Point2D p)
-    {
-      Point2D p_tmp;
-      p_tmp.col = col-p.col;
-      p_tmp.row = row-p.row;
-      return p_tmp;
-    }
-
-    Point2D Point2D::operator= (Point2D p)
-    {
-      row = p.row;
-      col = p.col;
-      return *this;
-    }
-
-    Point2D Point2D::operator= (Rect r)
-    {
-      row = r.upper;
-      col = r.left;
-      return *this;
-    }
-
     ImageRepresentation::ImageRepresentation(unsigned char* image, Size imageSize)
     {  
       // call the default initialization
@@ -322,7 +262,7 @@ namespace cv
       this->m_imageSize = imageSize;
 
       m_ROI = imageROI;
-      m_offset = m_ROI;
+      m_offset = cv::Point2i(m_ROI.left, m_ROI.upper);
 
       m_useVariance = false;
 
@@ -346,7 +286,7 @@ namespace cv
       m_ROI.width = imageSize.width;
       m_ROI.upper = 0;
       m_ROI.left = 0;
-      m_offset = m_ROI;
+      m_offset = cv::Point2i(m_ROI.left, m_ROI.upper);
 
       intImage = NULL;
       intSqImage = NULL;
@@ -383,7 +323,7 @@ namespace cv
         intSqImage = new __uint64[(ROI.width+1)*(ROI.height+1)];
       }
       this->m_ROI = ROI;
-      m_offset = ROI;
+      m_offset = cv::Point2i(ROI.left, ROI.upper);
       return;
     }
 
@@ -399,17 +339,17 @@ namespace cv
       this->createIntegralsOfROI(image);
     }
 
-    __uint32 ImageRepresentation::getValue(Point2D imagePosition)
+    __uint32 ImageRepresentation::getValue(cv::Point2i imagePosition)
     {
-      Point2D position = imagePosition-m_offset;
-      return intImage[position.row*(this->m_ROI.width+1)+position.col];
+      cv::Point2i position = imagePosition-m_offset;
+      return intImage[position.y*(this->m_ROI.width+1)+position.x];
     }
 
     long ImageRepresentation::getSqSum(Rect imageROI)
     {
       // left upper Origin
-      int OriginX = imageROI.left-m_offset.col;
-      int OriginY = imageROI.upper-m_offset.row;
+      int OriginX = imageROI.left-m_offset.x;
+      int OriginY = imageROI.upper-m_offset.y;
 
       __uint64 *OriginPtr = &intSqImage[OriginY * (m_ROI.width+1) + OriginX];
 
@@ -449,8 +389,8 @@ namespace cv
     __int32 ImageRepresentation::getSum(Rect imageROI)
     {
       // left upper Origin
-      int OriginX = imageROI.left-m_offset.col;
-      int OriginY = imageROI.upper-m_offset.row;
+      int OriginX = imageROI.left-m_offset.x;
+      int OriginY = imageROI.upper-m_offset.y;
 
       __uint32 *OriginPtr = &intImage[OriginY * (m_ROI.width+1) + OriginX];
 
@@ -474,8 +414,8 @@ namespace cv
     float ImageRepresentation::getMean(Rect imageROI)
     {
       // left upper Origin
-      int OriginX = imageROI.left-m_offset.col;
-      int OriginY = imageROI.upper-m_offset.row;
+      int OriginX = imageROI.left-m_offset.x;
+      int OriginY = imageROI.upper-m_offset.y;
 
       // Check and fix width and height
       int Width  = imageROI.width;
@@ -963,7 +903,7 @@ namespace cv
 
     void FeatureHaar::generateRandomFeature(Size patchSize)
     {	
-      Point2D position;
+      cv::Point2i position;
       Size baseDim;
       Size sizeFactor;
       int area;
@@ -975,8 +915,8 @@ namespace cv
       while (!valid)
       {
         //chosse position and scale
-        position.row = rand()%(patchSize.height);
-        position.col = rand()%(patchSize.width);
+        position.y = rand()%(patchSize.height);
+        position.x = rand()%(patchSize.width);
 
         baseDim.width = (int) ((1-sqrt(1-(float)rand()/RAND_MAX))*patchSize.width);
         baseDim.height = (int) ((1-sqrt(1-(float)rand()/RAND_MAX))*patchSize.height);
@@ -991,8 +931,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 2;
           sizeFactor.width = 1;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1004,12 +944,12 @@ namespace cv
           m_weights[0] = 1;
           m_weights[1] = -1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col;
-          m_areas[1].upper = position.row+baseDim.height;
+          m_areas[1].left = position.x;
+          m_areas[1].upper = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
           m_initMean = 0;
@@ -1023,8 +963,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 1;
           sizeFactor.width = 2;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1036,12 +976,12 @@ namespace cv
           m_weights[0] = 1;
           m_weights[1] = -1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col+baseDim.width;
-          m_areas[1].upper = position.row;
+          m_areas[1].left = position.x+baseDim.width;
+          m_areas[1].upper = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
           m_initMean = 0;
@@ -1054,8 +994,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 4;
           sizeFactor.width = 1;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1068,16 +1008,16 @@ namespace cv
           m_weights[1] = -2;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col;
-          m_areas[1].upper = position.row+baseDim.height;
+          m_areas[1].left = position.x;
+          m_areas[1].upper = position.y+baseDim.height;
           m_areas[1].height = 2*baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.row+3*baseDim.height;
-          m_areas[2].left = position.col;
+          m_areas[2].upper = position.y+3*baseDim.height;
+          m_areas[2].left = position.x;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 0;
@@ -1089,8 +1029,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 1;
           sizeFactor.width = 4;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1103,16 +1043,16 @@ namespace cv
           m_weights[1] = -2;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col+baseDim.width;
-          m_areas[1].upper = position.row;
+          m_areas[1].left = position.x+baseDim.width;
+          m_areas[1].upper = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = 2*baseDim.width;
-          m_areas[2].upper = position.row;
-          m_areas[2].left = position.col+3*baseDim.width;
+          m_areas[2].upper = position.y;
+          m_areas[2].left = position.x+3*baseDim.width;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 0;
@@ -1124,8 +1064,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 2;
           sizeFactor.width = 2;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1139,20 +1079,20 @@ namespace cv
           m_weights[2] = -1;
           m_weights[3] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col+baseDim.width;
-          m_areas[1].upper = position.row;
+          m_areas[1].left = position.x+baseDim.width;
+          m_areas[1].upper = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.row+baseDim.height;
-          m_areas[2].left = position.col;
+          m_areas[2].upper = position.y+baseDim.height;
+          m_areas[2].left = position.x;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
-          m_areas[3].upper = position.row+baseDim.height;
-          m_areas[3].left = position.col+baseDim.width;
+          m_areas[3].upper = position.y+baseDim.height;
+          m_areas[3].left = position.x+baseDim.width;
           m_areas[3].height = baseDim.height;
           m_areas[3].width = baseDim.width;
           m_initMean = 0;
@@ -1164,8 +1104,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 3;
           sizeFactor.width = 3;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1177,12 +1117,12 @@ namespace cv
           m_weights[0] = 1;
           m_weights[1] = -9;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = 3*baseDim.height;
           m_areas[0].width = 3*baseDim.width;
-          m_areas[1].left = position.col+baseDim.width;
-          m_areas[1].upper = position.row+baseDim.height;
+          m_areas[1].left = position.x+baseDim.width;
+          m_areas[1].upper = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
           m_initMean = -8*128;
@@ -1194,8 +1134,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 3;
           sizeFactor.width = 1;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1208,16 +1148,16 @@ namespace cv
           m_weights[1] = -2;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col;
-          m_areas[1].upper = position.row+baseDim.height;
+          m_areas[1].left = position.x;
+          m_areas[1].upper = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.row+baseDim.height*2;
-          m_areas[2].left = position.col;
+          m_areas[2].upper = position.y+baseDim.height*2;
+          m_areas[2].left = position.x;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 0;
@@ -1229,8 +1169,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 1;
           sizeFactor.width = 3;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
 
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
@@ -1245,16 +1185,16 @@ namespace cv
           m_weights[1] = -2;
           m_weights[2] = 1;
           m_areas= new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col+baseDim.width;
-          m_areas[1].upper = position.row;
+          m_areas[1].left = position.x+baseDim.width;
+          m_areas[1].upper = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.row;
-          m_areas[2].left = position.col+2*baseDim.width;
+          m_areas[2].upper = position.y;
+          m_areas[2].left = position.x+2*baseDim.width;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 0;
@@ -1266,8 +1206,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 3;
           sizeFactor.width = 3;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1279,12 +1219,12 @@ namespace cv
           m_weights[0] = 1;
           m_weights[1] = -2;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = 3*baseDim.height;
           m_areas[0].width = 3*baseDim.width;
-          m_areas[1].left = position.col+baseDim.width;
-          m_areas[1].upper = position.row+baseDim.height;
+          m_areas[1].left = position.x+baseDim.width;
+          m_areas[1].upper = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
           m_initMean = 0;
@@ -1296,8 +1236,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 3;
           sizeFactor.width = 1;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1310,16 +1250,16 @@ namespace cv
           m_weights[1] = -1;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col;
-          m_areas[1].upper = position.row+baseDim.height;
+          m_areas[1].left = position.x;
+          m_areas[1].upper = position.y+baseDim.height;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.row+baseDim.height*2;
-          m_areas[2].left = position.col;
+          m_areas[2].upper = position.y+baseDim.height*2;
+          m_areas[2].left = position.x;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 128;
@@ -1331,8 +1271,8 @@ namespace cv
           //check if feature is valid
           sizeFactor.height = 1;
           sizeFactor.width = 3;
-          if (position.row + baseDim.height*sizeFactor.height >= patchSize.height ||
-            position.col + baseDim.width*sizeFactor.width >= patchSize.width)
+          if (position.y + baseDim.height*sizeFactor.height >= patchSize.height ||
+            position.x + baseDim.width*sizeFactor.width >= patchSize.width)
             continue;
           area = baseDim.height*sizeFactor.height*baseDim.width*sizeFactor.width;
           if (area < minArea)
@@ -1345,16 +1285,16 @@ namespace cv
           m_weights[1] = -1;
           m_weights[2] = 1;
           m_areas = new Rect[m_numAreas];
-          m_areas[0].left = position.col;
-          m_areas[0].upper = position.row;
+          m_areas[0].left = position.x;
+          m_areas[0].upper = position.y;
           m_areas[0].height = baseDim.height;
           m_areas[0].width = baseDim.width;
-          m_areas[1].left = position.col+baseDim.width;
-          m_areas[1].upper = position.row;
+          m_areas[1].left = position.x+baseDim.width;
+          m_areas[1].upper = position.y;
           m_areas[1].height = baseDim.height;
           m_areas[1].width = baseDim.width;
-          m_areas[2].upper = position.row;
-          m_areas[2].left = position.col+2*baseDim.width;
+          m_areas[2].upper = position.y;
+          m_areas[2].left = position.x+2*baseDim.width;
           m_areas[2].height = baseDim.height;
           m_areas[2].width = baseDim.width;
           m_initMean = 128;
@@ -1380,8 +1320,8 @@ namespace cv
     bool FeatureHaar::eval(ImageRepresentation* image, Rect ROI, float* result) 
     {
       *result = 0.0f;
-      Point2D offset;
-      offset = ROI;
+      cv::Point2i offset;
+      offset = cv::Point2i(ROI.left, ROI.upper);
 
       // define the minimum size
       Size minSize = Size(3,3);
@@ -1428,7 +1368,11 @@ namespace cv
 
       for (int curArea = 0; curArea < m_numAreas; curArea++)
       {
-        *result += (float)image->getSum( m_scaleAreas[curArea]+offset )*
+        *result += (float)image->getSum( Rect(m_scaleAreas[curArea].upper+offset .y,
+                                              m_scaleAreas[curArea].left+offset .x,
+                                              m_scaleAreas[curArea].height,
+                                              m_scaleAreas[curArea].width
+                                                  ))*
           m_scaleWeights[curArea];
       }
 
@@ -2421,11 +2365,11 @@ namespace cv
       return trackedPatch;
     }
 
-    Point2D BoostingTracker::getCenter()
+    cv::Point2i BoostingTracker::getCenter()
     {
-      Point2D center;
-      center.row = trackedPatch.upper + trackedPatch.height/2 ;
-      center.col =  trackedPatch.left +trackedPatch.width/2 ;
+      cv::Point2i center;
+      center.y = trackedPatch.upper + trackedPatch.height/2 ;
+      center.x =  trackedPatch.left +trackedPatch.width/2 ;
       return center;
     }
 
@@ -2587,11 +2531,11 @@ namespace cv
       return trackedPatch;
     }
 
-    Point2D SemiBoostingTracker::getCenter()
+    cv::Point2i SemiBoostingTracker::getCenter()
     {
-      Point2D center;
-      center.row = trackedPatch.upper + trackedPatch.height/2 ;
-      center.col = trackedPatch.left +trackedPatch.width/2 ;
+      cv::Point2i center;
+      center.y = trackedPatch.upper + trackedPatch.height/2 ;
+      center.x = trackedPatch.left +trackedPatch.width/2 ;
       return center;
     }
 
