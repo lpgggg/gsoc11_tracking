@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 {
   // Setup the parameters to use OnlineBoosting or MILTrack as the underlying tracking algorithm
   cv::ObjectTrackerParams params;
-#if 0
+#if 1
   params.algorithm_ = cv::ObjectTrackerParams::CV_ONLINEBOOSTING;
   //params.algorithm_ = cv::ObjectTrackerParams::CV_SEMIONLINEBOOSTING;
   params.num_classifiers_ = 100;

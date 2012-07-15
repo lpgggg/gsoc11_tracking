@@ -659,7 +659,7 @@ namespace cv
       int* getIdxDetections(){return m_idxDetections;};
       float* getConfidences(){return m_confidences;};
 
-      IplImage* getConfImageDisplay() const { return m_confImageDisplay; }
+      const cv::Mat & getConfImageDisplay() const { return m_confImageDisplay; }
 
     private:
 
@@ -674,9 +674,9 @@ namespace cv
       int m_sizeDetections;
       int m_idxBestDetection;
       float m_maxConfidence;
-      CvMat *m_confMatrix;
-      CvMat *m_confMatrixSmooth;
-      IplImage* m_confImageDisplay;
+      cv::Mat_<float> m_confMatrix;
+      cv::Mat_<float> m_confMatrixSmooth;
+      cv::Mat_<unsigned char> m_confImageDisplay;
     };
 
 
@@ -693,7 +693,7 @@ namespace cv
       float getConfidence();
       Rect getTrackedPatch();
       Point2D getCenter();
-      IplImage* getConfImageDisplay() const { return detector->getConfImageDisplay(); }
+      const cv::Mat & getConfImageDisplay() const { return detector->getConfImageDisplay(); }
 
     private:
       StrongClassifier* classifier;
@@ -717,7 +717,7 @@ namespace cv
       float getPriorConfidence();
       Rect getTrackedPatch();
       Point2D getCenter();
-      IplImage* getConfImageDisplay() const { return detector->getConfImageDisplay(); }
+      const cv::Mat & getConfImageDisplay() const { return detector->getConfImageDisplay(); }
 
     private:
       StrongClassifier* classifierOff;

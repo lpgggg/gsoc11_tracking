@@ -13,9 +13,11 @@ FIND_PACKAGE( OpenCV REQUIRED )
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 
 add_library(libObjectTracking src/cv_onlineboosting.cpp include/cv_onlineboosting.h src/cv_onlinemil.cpp include/cv_onlinemil.h src/object_tracker.cpp include/object_tracker.h)
+target_link_libraries(libObjectTracking ${OpenCV_LIBRARIES})
+
 include_directories(include)
 
 add_executable(ObjectTrackingApp samples/object_tracker_app.cpp)
 include_directories(include)
 add_dependencies(ObjectTrackingApp libObjectTracking)
-target_link_libraries(ObjectTrackingApp ${OpenCV_LIBS} libObjectTracking)
+target_link_libraries(ObjectTrackingApp ${OpenCV_LIBRARIES} libObjectTracking)

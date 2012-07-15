@@ -56,6 +56,7 @@
 
 #include <stdio.h>
 
+#include <cv.h>
 
 /****************************************************************************************\
 COPYRIGHT NOTICE
@@ -2158,11 +2159,6 @@ namespace cv
         delete[] m_idxDetections;
       if (m_confidences != NULL)
         delete[] m_confidences;
-
-      cvReleaseMat(&m_confMatrix);
-      cvReleaseMat(&m_confMatrixSmooth);
-      cvReleaseImage(&m_confImageDisplay);
-
     }
 
     void Detector::prepareConfidencesMemory(int numPatches)
@@ -2236,14 +2232,10 @@ namespace cv
       PatchesRegularScan *regPatches = (PatchesRegularScan*)patches;
       Size patchGrid = regPatches->getPatchGrid();
 
-      if((patchGrid.width != m_confMatrix->cols) || (patchGrid.height != m_confMatrix->rows)) {
-        cvReleaseMat(&m_confMatrix);
-        cvReleaseMat(&m_confMatrixSmooth);
-        cvReleaseImage(&m_confImageDisplay);
-
-        m_confMatrix = cvCreateMat(patchGrid.height,patchGrid.width,CV_32FC1);
-        m_confMatrixSmooth = cvCreateMat(patchGrid.height,patchGrid.width,CV_32FC1);
-        m_confImageDisplay = cvCreateImage(cvSize(patchGrid.width,patchGrid.height),IPL_DEPTH_8U,1);
+      if((patchGrid.width != m_confMatrix.cols) || (patchGrid.height != m_confMatrix.rows)) {
+        m_confMatrix.create(patchGrid.height,patchGrid.width);
+        m_confMatrixSmooth.create(patchGrid.height,patchGrid.width);
+        m_confImageDisplay.create(patchGrid.height,patchGrid.width);
       }
 
       int curPatch = 0;
@@ -2256,22 +2248,23 @@ namespace cv
           m_confidences[curPatch] = m_classifier->eval(image, patches->getRect(curPatch)); 
 
           // fill matrix
-          cvmSet(m_confMatrix,row,col,m_confidences[curPatch]);
+          m_confMatrix(row,col) = m_confidences[curPatch];
           curPatch++;
         }
       }
 
       // Filter
-      cvSmooth(m_confMatrix,m_confMatrixSmooth,CV_GAUSSIAN,3);
+      //cv::GaussianBlur(m_confMatrix,m_confMatrixSmooth,cv::Size(3,3),0.8);
+      cv::GaussianBlur(m_confMatrix,m_confMatrixSmooth,cv::Size(3,3),0);
 
       // Make display friendly
       double min_val, max_val;
-      cvMinMaxLoc(m_confMatrixSmooth, &min_val, &max_val);
-      for (int y = 0; y < m_confImageDisplay->height; y++)
+      cv::minMaxLoc(m_confMatrixSmooth, &min_val, &max_val);
+      for (int y = 0; y < m_confImageDisplay.rows; y++)
       {
-        unsigned char* pConfImg = (unsigned char*)(m_confImageDisplay->imageData + y*m_confImageDisplay->widthStep);
-        const float* pConfData = m_confMatrixSmooth->data.fl + y*m_confMatrixSmooth->step/sizeof(float);
-        for (int x = 0; x < m_confImageDisplay->width; x++, pConfImg++, pConfData++)
+        unsigned char* pConfImg = m_confImageDisplay[y];
+        const float* pConfData = m_confMatrixSmooth[y];
+        for (int x = 0; x < m_confImageDisplay.cols; x++, pConfImg++, pConfData++)
         {
           *pConfImg = static_cast<unsigned char>( 255.0*(*pConfData-min_val) / (max_val-min_val) );
         }
@@ -2282,7 +2275,7 @@ namespace cv
       for(int row = 0; row < patchGrid.height; row++) {
         for( int col = 0; col < patchGrid.width; col++) {
           // fill matrix
-          m_confidences[curPatch] = (float)cvmGet(m_confMatrixSmooth,row,col);
+          m_confidences[curPatch] = m_confMatrixSmooth(row,col);
 
           if (m_confidences[curPatch] > m_maxConfidence)
           {
