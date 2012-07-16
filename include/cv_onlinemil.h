@@ -1482,14 +1482,20 @@ namespace cv
 		
 		
 		class Sample
-		{
-		public:
-			Sample(Matrixu *img, int row, int col, int width=0, int height=0, float weight=1.0);
-			Sample() { _img = NULL; _row = _col = _height = _width = 0; _weight = 1.0f;};
+    {
+    public:
+      Sample(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs, int row, int col, int width = 0,
+             int height = 0, float weight = 1.0);
+      Sample()
+      {
+        _row = _col = _height = _width = 0;
+        _weight = 1.0f;
+      }
 			Sample&				operator= ( const Sample &a );
 			
 		public:
-			Matrixu				*_img;
+      cv::Mat _img;
+      std::vector<cv::Mat_<float> > _ii_imgs;
 			int					_row, _col, _width, _height;
 			float				_weight;
 			
@@ -1506,7 +1512,9 @@ namespace cv
 			
 			int					size() const { return _samples.size(); };
 			void				push_back(const Sample &s) { _samples.push_back(s); };
-			void				push_back(Matrixu *img, int x, int y, int width=0, int height=0, float weight=1.0f);
+      void
+      push_back(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_img, int x, int y, int width = 0,
+                int height = 0, float weight = 1.0f);
 			void				resize(int i) { _samples.resize(i); };
 			void				resizeFtrs(int i);
 			float &				getFtrVal(int sample,int ftr) { return _ftrVals[ftr](sample); };
@@ -1518,10 +1526,13 @@ namespace cv
 			void				clear() { _ftrVals.clear(); _samples.clear(); };
 			
 			
-			// densly sample the image in a donut shaped region: will take points inside circle of radius inrad,
-			// but outside of the circle of radius outrad.  when outrad=0 (default), then just samples points inside a circle
-			void				sampleImage(Matrixu *img, int x, int y, int w, int h, float inrad, float outrad=0, int maxnum=1000000);
-			void				sampleImage(Matrixu *img, uint num, int w, int h);
+			// densely sample the image in a donut shaped region: will take points inside circle of radius inrad,
+      // but outside of the circle of radius outrad.  when outrad=0 (default), then just samples points inside a circle
+      void
+      sampleImage(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs, int x, int y, int w, int h,
+                  float inrad, float outrad = 0, int maxnum = 1000000);
+      void
+      sampleImage(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs, uint num, int w, int h);
 			
 			
 			
@@ -1557,10 +1568,12 @@ namespace cv
 				for(int k=0; k<nftr; k++) 
 					_ftrVals[k].Resize(1,nsamp);
 		}
-		
-		inline void				SampleSet::push_back(Matrixu *img, int x, int y, int width, int height, float weight) 
-		{ 
-			Sample s(img,y,x,width,height, weight); 
+
+    inline void
+    SampleSet::push_back(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs, int x, int y, int width,
+                         int height, float weight)
+    {
+      Sample s(img, ii_imgs, y, x, width, height, weight);
 			push_back(s); 
 		}
 		
@@ -1648,7 +1661,8 @@ namespace cv
 		
 		inline float				HaarFtr::compute( const Sample &sample ) const
 		{
-			if( !sample._img->isInitII() ) abortError(__LINE__,__FILE__,"Integral image not initialized before called compute()");
+      if (sample._ii_imgs.empty())
+        abortError(__LINE__, __FILE__, "Integral image not initialized before called compute()");
 			IppiRect r;
 			float sum = 0.0f;
 			
@@ -1656,8 +1670,12 @@ namespace cv
 			{
 				r = _rects[k];
 				r.x += sample._col; r.y += sample._row;
-				sum += _weights[k]*sample._img->sumRect(r,_channel);///_rsums[k];
-			}
+        sum +=
+            _weights[k] * (sample._ii_imgs[_channel](r.y + r.height, r.x + r.width)
+                + sample._ii_imgs[_channel](r.y, r.x)
+                           - sample._ii_imgs[_channel](r.y + r.height, r.x)
+                           - sample._ii_imgs[_channel](r.y, r.x + r.width)); ///_rsums[k];
+      }
 			
 			r.x = sample._col;
 			r.y = sample._row;
@@ -1732,7 +1750,7 @@ namespace cv
 			virtual vectorf		classify(SampleSet &x, bool logR=true)=0;
 			
 			static ClfStrong*	makeClf(ClfStrongParams *clfparams);
-			static Matrixf		applyToImage(ClfStrong *clf, Matrixu &img, bool logR=true); // returns a probability map (or log odds ratio map if logR=true)
+			static Matrixf		applyToImage(ClfStrong *clf, const cv::Mat & img, bool logR=true); // returns a probability map (or log odds ratio map if logR=true)
 			
 			static void			eval(vectorf ppos, vectorf pneg, float &err, float &fp, float &fn, float thresh=0.5f);
 			static float		likl(vectorf ppos, vectorf pneg);
@@ -2209,8 +2227,10 @@ namespace cv
 		public:
 			SimpleTracker(){};
 			~SimpleTracker(){ if( _clf!=NULL ) delete _clf; };
-			double			track_frame(Matrixu &frame); // track object in a frame;  requires init() to have been called.
-			bool			init(Matrixu frame, SimpleTrackerParams p, ClfStrongParams *clfparams);
+      double
+      track_frame(const cv::Mat & frame); // track object in a frame;  requires init() to have been called.
+      bool
+      init(const cv::Mat & frame, SimpleTrackerParams p, ClfStrongParams *clfparams);
 			Matrixf &		getFtrHist() { return _clf->_ftrHist; }; // only works if _clf->_storeFtrHistory is set to true.. mostly for debugging
 			
 			inline void getTrackBox(cv::Rect & roi)

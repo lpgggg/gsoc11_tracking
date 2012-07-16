@@ -469,7 +469,7 @@ namespace cv
     }
 
     video_frame_->setData(image_, 0);
-    tracker_.init(*video_frame_, tracker_params_, clfparams_);
+    tracker_.init(image_, tracker_params_, clfparams_);
     
     // Return success
     return true;
@@ -490,7 +490,7 @@ namespace cv
     video_frame_->setData(image_, 0);
 
     // Update tracker
-    tracker_.track_frame(*video_frame_);
+    tracker_.track_frame(image_);
 
     // Save output
     tracker_.getTrackBox(track_box);

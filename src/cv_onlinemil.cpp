@@ -63,6 +63,14 @@
 
 using namespace std;
 
+void
+compute_integral(const cv::Mat & img, std::vector<cv::Mat_<float> > & ii_imgs)
+{
+  cv::Mat ii_img;
+  cv::integral(img, ii_img, CV_32F);
+  cv::split(ii_img, ii_imgs);
+}
+
 
 #ifndef HAVE_IPP
 /*****************************************************************************/
@@ -1356,9 +1364,10 @@ namespace cv
 		}
 		
 		
-		Sample::Sample(Matrixu *img, int row, int col, int width, int height, float weight) 
+		Sample::Sample(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs,int row, int col, int width, int height, float weight)
 		{
 			_img	= img;
+			_ii_imgs = ii_imgs;
 			_row	= row;
 			_col	= col;
 			_width	= width;
@@ -1368,10 +1377,12 @@ namespace cv
 		
 		
 		
-		void		SampleSet::sampleImage(Matrixu *img, int x, int y, int w, int h, float inrad, float outrad, int maxnum)
-		{
-			int rowsz = img->rows() - h - 1;
-			int colsz = img->cols() - w - 1;
+		void
+    SampleSet::sampleImage(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs, int x, int y, int w, int h,
+                           float inrad, float outrad, int maxnum)
+    {
+      int rowsz = img.rows - h - 1;
+      int colsz = img.cols - w - 1;
 			float inradsq = inrad*inrad;
 			float outradsq = outrad*outrad;
 			int dist;
@@ -1393,6 +1404,7 @@ namespace cv
 					dist = (y-r)*(y-r) + (x-c)*(x-c);
 					if( randfloat()<prob && dist < inradsq && dist >= outradsq ){
 						_samples[i]._img = img;
+						_samples[i]._ii_imgs = ii_imgs;
 						_samples[i]._col = c;
 						_samples[i]._row = r;
 						_samples[i]._height = h;
@@ -1404,15 +1416,17 @@ namespace cv
 			_samples.resize(min(i,maxnum));
 			
 		}
-		
-		void		SampleSet::sampleImage(Matrixu *img, uint num, int w, int h)
-		{
-			int rowsz = img->rows() - h - 1;
-			int colsz = img->cols() - w - 1;
+
+    void
+    SampleSet::sampleImage(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs, uint num, int w, int h)
+    {
+      int rowsz = img.rows - h - 1;
+      int colsz = img.cols - w - 1;
 			
 			_samples.resize( num );
 			for( int i=0; i<(int)num; i++ ){
 				_samples[i]._img = img;
+				_samples[i]._ii_imgs = ii_imgs;
 				_samples[i]._col = randint(0,colsz);
 				_samples[i]._row = randint(0,rowsz);
 				_samples[i]._height = h;
@@ -1586,18 +1600,21 @@ namespace cv
 			clf->init(clfparams);
 			return clf;
 		}
-		
-		Matrixf				ClfStrong::applyToImage(ClfStrong *clf, Matrixu &img, bool logR)
-		{
-			img.initII();
-			Matrixf resp(img.rows(),img.cols());
+
+    Matrixf
+    ClfStrong::applyToImage(ClfStrong *clf, const cv::Mat & img, bool logR)
+    {
+      std::vector<cv::Mat_<float> > ii_imgs;
+      compute_integral(img, ii_imgs);
+			Matrixf resp(img.rows,img.cols);
 			int height = clf->_params->_ftrParams->_height;
 			int width = clf->_params->_ftrParams->_width;
 			
 			//int rowsz = img.rows() - width - 1;
 			//int colsz = img.cols() - height - 1;
 			
-			SampleSet x; x.sampleImage(&img,0,0,width,height,100000); // sample every point
+			SampleSet x;
+      x.sampleImage(img, ii_imgs, 0, 0, width, height, 100000); // sample every point
 			Ftr::compute(x,clf->_ftrs);
 			vectorf rf = clf->classify(x,logR);
 			for( int i=0; i<x.size(); i++ )
@@ -1909,13 +1926,15 @@ namespace cv
 			
 			return;
 		}
-		
-		bool			SimpleTracker::init(Matrixu frame, SimpleTrackerParams p, ClfStrongParams *clfparams)
-		{
-			static Matrixu *img;
-			
-			img = &frame;
-			frame.initII();
+
+    bool
+    SimpleTracker::init(const cv::Mat & frame, SimpleTrackerParams p, ClfStrongParams *clfparams)
+    {
+      static cv::Mat img;
+
+      img = frame;
+      std::vector<cv::Mat_<float> > ii_imgs;
+      compute_integral(img, ii_imgs);
 			
 			_clf = ClfStrong::makeClf(clfparams);
 			_curState.resize(4);
@@ -1925,15 +1944,15 @@ namespace cv
 			fprintf(stderr,"Initializing Tracker..\n");
 			
 			// sample positives and negatives from first frame
-			posx.sampleImage(img, (uint)_curState[0],(uint)_curState[1], (uint)_curState[2], (uint)_curState[3], p._init_postrainrad);
-			negx.sampleImage(img, (uint)_curState[0],(uint)_curState[1], (uint)_curState[2], (uint)_curState[3], 2.0f*p._srchwinsz, (1.5f*p._init_postrainrad), p._init_negnumtrain);
+      posx.sampleImage(img, ii_imgs, (uint) _curState[0], (uint) _curState[1], (uint) _curState[2], (uint) _curState[3],
+                       p._init_postrainrad);
+      negx.sampleImage(img, ii_imgs, (uint) _curState[0], (uint) _curState[1], (uint) _curState[2], (uint) _curState[3],
+                       2.0f * p._srchwinsz, (1.5f * p._init_postrainrad), p._init_negnumtrain);
 			if( posx.size()<1 || negx.size()<1 ) return false;
 			
 			// train
 			_clf->update(posx,negx);
 			negx.clear();
-			
-			img->FreeII();
 			
 			_trparams = p;
 			_clfparams = clfparams;
@@ -1942,25 +1961,28 @@ namespace cv
 		}
 		
 		
-		double			SimpleTracker::track_frame(Matrixu &frame)
-		{
+		double
+    SimpleTracker::track_frame(const cv::Mat & frame)
+    {
 			static SampleSet posx, negx, detectx;
 			static vectorf prob;
 			static vectori order;
-			static Matrixu *img;
+      static cv::Mat img;
 			
 			double resp;
 			
-			img = &frame;
-			frame.initII();
+			img = frame;
+      std::vector<cv::Mat_<float> > ii_imgs;
+      compute_integral(img, ii_imgs);
 			
 			// run current clf on search window
-			detectx.sampleImage(img,(uint)_curState[0],(uint)_curState[1],(uint)_curState[2],(uint)_curState[3], (float)_trparams._srchwinsz);
+      detectx.sampleImage(img, ii_imgs, (uint) _curState[0], (uint) _curState[1], (uint) _curState[2],
+                          (uint) _curState[3], (float) _trparams._srchwinsz);
 			prob = _clf->classify(detectx,_trparams._useLogR);
 			
 			/////// DEBUG /////// display actual probability map
 			if( _trparams._debugv ){
-				Matrixf probimg(frame.rows(),frame.cols());
+				Matrixf probimg(frame.rows,frame.cols);
 				for( uint k=0; k<(uint)detectx.size(); k++ )
 					probimg(detectx[k]._row, detectx[k]._col) = prob[k];
 				
@@ -1978,20 +2000,20 @@ namespace cv
 			// train location clf (negx are randomly selected from image, posx is just the current tracker location)
 			
 			if( _trparams._negsamplestrat == 0 )
-				negx.sampleImage(img, _trparams._negnumtrain, (int)_curState[2], (int)_curState[3]);
+        negx.sampleImage(img, ii_imgs, _trparams._negnumtrain, (int) _curState[2], (int) _curState[3]);
 			else
-				negx.sampleImage(img, (int)_curState[0], (int)_curState[1], (int)_curState[2], (int)_curState[3], 
-								 (1.5f*_trparams._srchwinsz), _trparams._posradtrain+5, _trparams._negnumtrain);
+        negx.sampleImage(img, ii_imgs, (int) _curState[0], (int) _curState[1], (int) _curState[2], (int) _curState[3],
+                         (1.5f * _trparams._srchwinsz), _trparams._posradtrain + 5, _trparams._negnumtrain);
 			
 			if( _trparams._posradtrain == 1 )
-				posx.push_back(img, (int)_curState[0], (int)_curState[1], (int)_curState[2], (int)_curState[3]);
+        posx.push_back(img, ii_imgs, (int) _curState[0], (int) _curState[1], (int) _curState[2], (int) _curState[3]);
 			else
-				posx.sampleImage(img, (int)_curState[0], (int)_curState[1], (int)_curState[2], (int)_curState[3], _trparams._posradtrain, 0, _trparams._posmaxtrain);
+        posx.sampleImage(img, ii_imgs, (int) _curState[0], (int) _curState[1], (int) _curState[2], (int) _curState[3],
+                         _trparams._posradtrain, 0, _trparams._posmaxtrain);
 			
 			_clf->update(posx,negx);
 			
 			// clean up
-			img->FreeII();
 			posx.clear(); negx.clear(); detectx.clear();
 			
 			_cnt++;
