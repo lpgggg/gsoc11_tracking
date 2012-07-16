@@ -1521,8 +1521,12 @@ namespace cv
 			float				getFtrVal(int sample,int ftr) const { return _ftrVals[ftr](sample); };
 			Sample &			operator[] (const int sample)  { return _samples[sample]; };
 			Sample				operator[] (const int sample) const { return _samples[sample]; };
-			Matrixf				ftrVals(int ftr) const { return _ftrVals[ftr]; };
-			bool				ftrsComputed() const { return !_ftrVals.empty() && !_samples.empty() && _ftrVals[0].size()>0; };
+      const cv::Mat_<float> &
+      ftrVals(int ftr) const
+      {
+        return _ftrVals[ftr];
+      }
+			bool				ftrsComputed() const { return !_ftrVals.empty() && !_samples.empty() && !_ftrVals[0].empty(); };
 			void				clear() { _ftrVals.clear(); _samples.clear(); };
 			
 			
@@ -1538,10 +1542,8 @@ namespace cv
 			
 		private:
 			std::vector<Sample>		_samples;
-			std::vector<Matrixf>		_ftrVals; // [ftr][sample]
-			
-			
-		};
+      std::vector<cv::Mat_<float> > _ftrVals; // [ftr][sample]
+    };
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1566,7 +1568,7 @@ namespace cv
 			
 			if( nsamp>0 )
 				for(int k=0; k<nftr; k++) 
-					_ftrVals[k].Resize(1,nsamp);
+					_ftrVals[k].create(1, nsamp);
 		}
 
     inline void
@@ -1830,7 +1832,9 @@ namespace cv
 			ClfWeak(int id);
 			
 			virtual void		init()=0;
-			virtual void		update(SampleSet &posx, SampleSet &negx, vectorf *posw=NULL, vectorf *negw=NULL)=0;
+      virtual void
+      update(SampleSet &posx, SampleSet &negx, const cv::Mat_<float> & posw = cv::Mat_<float>(),
+             const cv::Mat_<float> & negw = cv::Mat_<float>())=0;
 			virtual bool		classify(SampleSet &x, int i)=0;
 			virtual float		classifyF(SampleSet &x, int i)=0;
 			virtual void		copy(const ClfWeak* c)=0;
@@ -1870,7 +1874,8 @@ namespace cv
 			ClfOnlineStump() : ClfWeak() {init();};
 			ClfOnlineStump(int ind) : ClfWeak(ind) {init();};
 			virtual void		init();
-			virtual void		update(SampleSet &posx, SampleSet &negx, vectorf *posw=NULL, vectorf *negw=NULL);
+      virtual void
+      update(SampleSet &posx, SampleSet &negx, const cv::Mat_<float> & posw, const cv::Mat_<float> & negw);
 			virtual bool		classify(SampleSet &x, int i);
 			virtual float		classifyF(SampleSet &x, int i);
 			virtual void		copy(const ClfWeak* c);
@@ -1894,7 +1899,8 @@ namespace cv
 			ClfWStump() : ClfWeak() {init();};
 			ClfWStump(int ind) : ClfWeak(ind) {init();};
 			virtual void		init();
-			virtual void		update(SampleSet &posx, SampleSet &negx, vectorf *posw=NULL, vectorf *negw=NULL);
+      virtual void
+      update(SampleSet &posx, SampleSet &negx, const cv::Mat_<float> & posw, const cv::Mat_<float> & negw);
 			virtual bool		classify(SampleSet &x, int i){return classifyF(x,i)>0;};
 			virtual float		classifyF(SampleSet &x, int i);
 			virtual void		copy(const ClfWeak* c);
@@ -1924,20 +1930,25 @@ namespace cv
 			return res;
 		}
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
-		inline void				ClfOnlineStump::update(SampleSet &posx, SampleSet &negx, vectorf *posw, vectorf *negw)
-		{
+    inline void
+    ClfOnlineStump::update(SampleSet &posx, SampleSet &negx, const cv::Mat_<float> & posw, const cv::Mat_<float> & negw)
+    {
 			float posmu=0.0,negmu=0.0;
-			if( posx.size()>0 ) posmu=posx.ftrVals(_ind).Mean();
-			if( negx.size()>0 ) negmu=negx.ftrVals(_ind).Mean();
+      if (posx.size() > 0)
+        posmu = cv::mean(posx.ftrVals(_ind))[0];
+      if (negx.size() > 0)
+        negmu = cv::mean(negx.ftrVals(_ind))[0];
 			
 			if( _trained ){
 				if( posx.size()>0 ){
 					_mu1	= ( _lRate*_mu1  + (1-_lRate)*posmu );
-					_sig1	= ( _lRate*_sig1 + (1-_lRate)* ( (posx.ftrVals(_ind)-_mu1).Sqr().Mean() ) );
+          cv::Mat diff = posx.ftrVals(_ind) - _mu1;
+          _sig1 = _lRate * _sig1 + (1 - _lRate) * cv::mean(diff.mul(diff))[0];
 				}
 				if( negx.size()>0 ){
 					_mu0	= ( _lRate*_mu0  + (1-_lRate)*negmu );
-					_sig0	= ( _lRate*_sig0 + (1-_lRate)* ( (negx.ftrVals(_ind)-_mu0).Sqr().Mean() ) );
+          cv::Mat diff = negx.ftrVals(_ind) - _mu0;
+          _sig0 = _lRate * _sig0 + (1 - _lRate) * cv::mean(diff.mul(diff))[0];
 				}
 				
 				_q = (_mu1-_mu0)/2;
@@ -1954,12 +1965,16 @@ namespace cv
 				_trained = true;
 				if( posx.size()>0 ){
 					_mu1 = posmu;
-					_sig1 = posx.ftrVals(_ind).Var()+1e-9f;
+          cv::Scalar scal_mean, scal_std_dev;
+          cv::meanStdDev(posx.ftrVals(_ind), scal_mean, scal_std_dev);
+          _sig1 = scal_std_dev[0] * scal_std_dev[0] + 1e-9f;
 				}
 				
 				if( negx.size()>0 ){
 					_mu0 = negmu;
-					_sig0 = negx.ftrVals(_ind).Var()+1e-9f;
+          cv::Scalar scal_mean, scal_std_dev;
+          cv::meanStdDev(negx.ftrVals(_ind), scal_mean, scal_std_dev);
+          _sig0 = scal_std_dev[0] * scal_std_dev[0] + 1e-9f;
 				}
 				
 				_q = (_mu1-_mu0)/2;
@@ -2012,41 +2027,53 @@ namespace cv
 		
 		
 		////////////////////////////////////////////////////////////////////////////////////////////////////////
-		inline void				ClfWStump::update(SampleSet &posx, SampleSet &negx, vectorf *posw, vectorf *negw)
+    inline void
+    ClfWStump::update(SampleSet &posx, SampleSet &negx, const cv::Mat_<float> & posw, const cv::Mat_<float> & negw)
 		{
-			Matrixf poswm, negwm, poswn, negwn;
-			if( ((int)posx.size() != (int)posw->size()) || ((int)negx.size() != (int)negw->size()) )
+			cv::Mat_<float> poswn, negwn;
+			if( (posx.size() != posw.size().area()) || (negx.size() != negw.size().area()) )
 				abortError(__LINE__,__FILE__,"ClfWStump::update - number of samples and number of weights mismatch");
 			
 			float posmu=0.0, negmu=0.0;
 			if( posx.size()>0 ) {
-				poswm = *posw;
-				poswn = poswm.normalize();
-				posmu = posx.ftrVals(_ind).MeanW(poswn);
+        poswn = posw / (cv::sum(posw)[0] + 1e-6);
+        posmu = cv::mean(posx.ftrVals(_ind).mul(poswn))[0];
 			}
 			if( negx.size()>0 ) {
-				negwm = *negw;
-				negwn = negwm.normalize();
-				negmu = negx.ftrVals(_ind).MeanW(negwn);
+        negwn = negw / (cv::sum(negw)[0] + 1e-6);
+        negmu = cv::mean(negx.ftrVals(_ind).mul(negwn))[0];
 			}
 			
 			if( _trained ){
 				if( posx.size()>0 ){
 					_mu1	= ( _lRate*_mu1  + (1-_lRate)*posmu );
-					_sig1	= ( _lRate*_sig1  + (1-_lRate)*posx.ftrVals(_ind).VarW(poswn,&_mu1) );
+          cv::Scalar scal_mean, scal_std_dev;
+          cv::meanStdDev(posx.ftrVals(_ind).mul(poswn), scal_mean, scal_std_dev);
+          _sig1 = _lRate * _sig1 + (1 - _lRate) * scal_std_dev[0] * scal_std_dev[0];
 				}
 				if( negx.size()>0 ){
 					_mu0	= ( _lRate*_mu0  + (1-_lRate)*negmu );
-					_sig0	= ( _lRate*_sig0  + (1-_lRate)*negx.ftrVals(_ind).VarW(negwn,&_mu0) );
+          cv::Scalar scal_mean, scal_std_dev;
+          cv::meanStdDev(negx.ftrVals(_ind).mul(negwn), scal_mean, scal_std_dev);
+          _sig0 = _lRate * _sig0 + (1 - _lRate) * scal_std_dev[0] * scal_std_dev[0];
 				}
 			}
 			else{
 				_trained = true;
 				_mu1 = posmu;
 				_mu0 = negmu;
-				if( negx.size()>0 ) _sig0 = negx.ftrVals(_ind).VarW(negwn,&negmu)+1e-9f;
-				if( posx.size()>0 ) _sig1 = posx.ftrVals(_ind).VarW(poswn,&posmu)+1e-9f;
-			}
+        cv::Scalar scal_mean, scal_std_dev;
+        if (negx.size() > 0)
+        {
+          cv::meanStdDev(negx.ftrVals(_ind).mul(negwn), scal_mean, scal_std_dev);
+          _sig0 = scal_std_dev[0] * scal_std_dev[0] + 1e-9f;
+        }
+        if (posx.size() > 0)
+        {
+          cv::meanStdDev(posx.ftrVals(_ind).mul(poswn), scal_mean, scal_std_dev);
+          _sig1 = scal_std_dev[0] * scal_std_dev[0] + 1e-9f;
+        }
+      }
 			
 			_n0 = 1.0f/pow(_sig0,0.5f);
 			_n1 = 1.0f/pow(_sig1,0.5f);
