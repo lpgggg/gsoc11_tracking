@@ -41,13 +41,15 @@
 #define __OPENCV_ONLINE_MIL_H__
 
 #include <vector>
-#include <cv.h>
-#include <highgui.h>
-#include <cxcore.h>
 
 #include <iostream>
 #include <fstream>
 #include <float.h>
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/objdetect/objdetect.hpp>
 
 #if defined(unix)        || defined(__unix)      || defined(__unix__) \
   || defined(linux)       || defined(__linux)     || defined(__linux__) \
@@ -2196,7 +2198,7 @@ namespace cv
 			static void		replayTrackers(vector<Matrixu> &vid, vector<string> statesfile, string outputvid, Matrixu colors);
 			
 		protected:
-			static CvHaarClassifierCascade	*facecascade;
+			static cv::CascadeClassifier facecascade;
 		};
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2205,7 +2207,7 @@ namespace cv
 		class SimpleTracker : public Tracker
 		{
 		public:
-			SimpleTracker(){ facecascade = NULL; };
+			SimpleTracker(){};
 			~SimpleTracker(){ if( _clf!=NULL ) delete _clf; };
 			double			track_frame(Matrixu &frame); // track object in a frame;  requires init() to have been called.
 			bool			init(Matrixu frame, SimpleTrackerParams p, ClfStrongParams *clfparams);

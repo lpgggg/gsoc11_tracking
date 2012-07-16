@@ -248,11 +248,11 @@ namespace cv
     // Now copy it in appropriately as a gray-scale, 8-bit image
     if (image->nChannels == 4)
     {
-      cvCvtColor(image, image_, CV_RGBA2GRAY);
+      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
     }
     else if (image->nChannels == 3)
     {
-      cvCvtColor(image, image_, CV_RGB2GRAY);
+      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
     }
     else if (image->nChannels == 1)
     {
@@ -400,11 +400,11 @@ namespace cv
     // Now copy it in appropriately as a gray-scale, 8-bit image
     if (image->nChannels == 4)
     {
-      cvCvtColor(image, image_, CV_RGBA2GRAY);
+      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
     }
     else if (image->nChannels == 3)
     {
-      cvCvtColor(image, image_, CV_RGB2GRAY);
+      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
     }
     else if (image->nChannels == 1)
     {
@@ -553,11 +553,11 @@ namespace cv
     // Now copy it in appropriately as a gray-scale, 8-bit image
     if (image->nChannels == 4)
     {
-      cvCvtColor(image, image_, CV_RGBA2GRAY);
+      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
     }
     else if (image->nChannels == 3)
     {
-      cvCvtColor(image, image_, CV_RGB2GRAY);
+      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
     }
     else if (image->nChannels == 1)
     {

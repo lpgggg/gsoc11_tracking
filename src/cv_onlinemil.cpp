@@ -52,14 +52,10 @@
 #include "omp.h"
 #endif
 
-#include <iostream>
-#include <stdio.h>
 #include <memory.h>
 #include <limits>
 
-#include <cv.h>
 #include <omp.h>
-
 
 // MILTRACK
 // Copyright 2009 Boris Babenko (bbabenko@cs.ucsd.edu | http://vision.ucsd.edu/~bbabenko).  Distributed under the terms of the GNU Lesser General Public License 
@@ -827,7 +823,7 @@ IppStatus ippiIntegral_8u32f_C1R(const Ipp8u* pSrc, int srcStep,
 	memcpy(src->imageData, pSrc, src->imageSize);
 	
 	IplImage* dst = cvCreateImage(cvSize(roiSize.width+1,roiSize.height+1),IPL_DEPTH_32F,1);
-	cvIntegral(src, dst);
+	cv::integral(cv::Mat(src), cv::Mat(dst), CV_32F);
 	memcpy(pDst, dst->imageData, dst->imageSize);
 	
 	cvReleaseImage(&src);
@@ -898,7 +894,7 @@ IppStatus ippiResize_8u_C1R(const Ipp8u* pSrc, IppiSize srcSize, int srcStep, Ip
 	
 	CvSize dstSize = cvSize( cvRound(xFactor*static_cast<double>(srcSize.width)), cvRound(yFactor*static_cast<double>(dstRoiSize.height)) );
 	IplImage* dst = cvCreateImage(dstSize, IPL_DEPTH_8U, 1);
-	cvResize(src, dst);
+	cv::resize(cv::Mat(src), cv::Mat(dst), cv::Mat(dst).size());
 	memcpy(pDst, dst->imageData, dst->imageSize);
 	
 	cvReleaseImage(&src);
@@ -1085,7 +1081,7 @@ namespace cv
 			else{
 				static IplImage *img2;
 				if( img2 == NULL ) img2 = cvCreateImage( cvSize(res._cols, res._rows), IPL_DEPTH_8U, 1 ); 
-				cvCvtColor( img, img2, CV_RGB2GRAY );
+				cv::cvtColor( cv::Mat(img), cv::Mat(img2), CV_RGB2GRAY );
 				img2->origin = 0;
 				res.GrayIplImage2Matrix(img2);
 			}
@@ -1914,9 +1910,6 @@ namespace cv
 			return;
 		}
 		
-		
-		CvHaarClassifierCascade* Tracker::facecascade = NULL;
-		
 		bool			SimpleTracker::init(Matrixu frame, SimpleTrackerParams p, ClfStrongParams *clfparams)
 		{
 			static Matrixu *img;
@@ -2009,6 +2002,8 @@ namespace cv
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
+		cv::CascadeClassifier Tracker::facecascade = cv::CascadeClassifier();
+
 		void			Tracker::replayTracker(vector<Matrixu> &vid, const std::string statesfile, std::string outputvid, uint R, uint G, uint B)
 		{
 			Matrixf states;
@@ -2080,46 +2075,42 @@ namespace cv
 		{
 			const char* cascade_name = "haarcascade_frontalface_alt_tree.xml";
 			const int minsz = 20;
-			if( Tracker::facecascade == NULL )
-				Tracker::facecascade = (CvHaarClassifierCascade*)cvLoad( cascade_name, 0, 0, 0 );
+			if( Tracker::facecascade.empty() )
+				Tracker::facecascade.load(cascade_name);
 			
 			frame.createIpl();
 			IplImage *img = frame.getIpl();
 			IplImage* gray = cvCreateImage( cvSize(img->width, img->height), IPL_DEPTH_8U, 1 );
-			cvCvtColor(img, gray, CV_BGR2GRAY );
+			cv::cvtColor(cv::Mat(img), cv::Mat(gray), CV_BGR2GRAY );
 			frame.freeIpl();
-			cvEqualizeHist(gray, gray);
+			cv::equalizeHist(cv::Mat(gray), cv::Mat(gray));
 			
 			CvMemStorage* storage = cvCreateMemStorage(0);
 			cvClearMemStorage(storage);
-			CvSeq* faces = cvHaarDetectObjects(gray, Tracker::facecascade, storage, 1.05, 3, CV_HAAR_DO_CANNY_PRUNING ,cvSize(minsz, minsz));
+			std::vector<cv::Rect> faces;
+			facecascade.detectMultiScale(gray, faces, 1.05, 3, CV_HAAR_DO_CANNY_PRUNING ,cvSize(minsz, minsz));
 			
-			int index = faces->total-1;
-			CvRect* r = (CvRect*)cvGetSeqElem( faces, index );
-			
-			
-			
-			while(r && (r->width<minsz || r->height<minsz || (r->y+r->height+10)>frame.rows() || (r->x+r->width)>frame.cols() ||
-						r->y<0 || r->x<0)){
-				r = (CvRect*)cvGetSeqElem( faces, --index);
-			}
-			
-			//if( r == NULL ){
-			//	cout << "ERROR: no face" << endl;
-			//	return false;
-			//}
-			//else 
-			//	cout << "Face Found: " << r->x << " " << r->y << " " << r->width << " " << r->height << endl;
-			if( r==NULL )
-				return false;
-			
+			bool is_good = false;
+			cv::Rect r;
+      for (int index = faces.size() - 1; index >= 0; --index)
+      {
+        r = faces[index];
+        if (r.width < minsz || r.height < minsz || (r.y + r.height + 10) > frame.rows()
+            || (r.x + r.width) > frame.cols() || r.y < 0 || r.x < 0)
+          continue;
+        is_good = true;
+        break;
+      }
+      if (!is_good)
+        return false;
+
 			//fprintf(stderr,"x=%f y=%f xmax=%f ymax=%f imgw=%f imgh=%f\n",(float)r->x,(float)r->y,(float)r->x+r->width,(float)r->y+r->height,(float)frame.cols(),(float)frame.rows());
 			
 			params->_initstate.resize(4);
-			params->_initstate[0]	= (float)r->x;// - r->width;
-			params->_initstate[1]	= (float)r->y;// - r->height;
-			params->_initstate[2]	= (float)r->width;
-			params->_initstate[3]	= (float)r->height+10;
+			params->_initstate[0]	= (float)r.x;// - r->width;
+			params->_initstate[1]	= (float)r.y;// - r->height;
+			params->_initstate[2]	= (float)r.width;
+			params->_initstate[3]	= (float)r.height+10;
 			
 			
 			return true;
