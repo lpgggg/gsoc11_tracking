@@ -84,7 +84,7 @@ namespace cv
 
       Patches();
       Patches(int num);
-      virtual ~Patches(void);
+      virtual ~Patches(void) {};
 
       virtual Rect getRect(int index);
       virtual Rect getSpecialRect(const char* what);
@@ -103,7 +103,7 @@ namespace cv
 
       void setCheckedROI(Rect imageROI, Rect validROI);
 
-      Rect* patches;
+      std::vector<Rect> patches;
       int num;
       Rect ROI;
       int numPatchesX; 
@@ -227,7 +227,6 @@ namespace cv
     public:
 
       FeatureHaar(Size patchSize);
-      virtual ~FeatureHaar();
 
       void getInitialDistribution(EstimatedGaussDistribution *distribution);
 
@@ -236,25 +235,25 @@ namespace cv
       float getResponse(){return m_response;};
 
       int getNumAreas(){return m_numAreas;};
-      int* getWeights(){return m_weights;};
-      Rect* getAreas(){return m_areas;};
+      const std::vector<int> & getWeights() const {return m_weights;};
+      const std::vector<Rect> & getAreas() const {return m_areas;};
 
     private:
 
       char m_type[20];
       int m_numAreas;
-      int* m_weights;
+      std::vector<int> m_weights;
       float m_initMean;
       float m_initSigma;
 
       void generateRandomFeature(Size imageSize);
-      Rect* m_areas;     // areas within the patch over which to compute the feature
+      std::vector<Rect> m_areas;     // areas within the patch over which to compute the feature
       cv::Size m_initSize;   // size of the patch used during training
       cv::Size m_curSize;    // size of the patches currently under investigation
       float m_scaleFactorHeight;  // scaling factor in vertical direction
       float m_scaleFactorWidth;   // scaling factor in horizontal direction
-      Rect* m_scaleAreas;// areas after scaling
-      float* m_scaleWeights; // weights after scaling
+      std::vector<Rect> m_scaleAreas;// areas after scaling
+      std::vector<float> m_scaleWeights; // weights after scaling
       float m_response;
 
     };
@@ -342,9 +341,9 @@ namespace cv
 
       void getErrorMask(ImageRepresentation* image, Rect ROI, int target, bool* errorMask); 
       void getErrors(float* errors);
-      virtual int selectBestClassifier(bool* errorMask, float importance, float* errors); 
+      virtual int selectBestClassifier(bool* errorMask, float importance, std::vector<float> & errors);
 
-      virtual int replaceWeakestClassifier(float* errors, Size patchSize);
+      virtual int replaceWeakestClassifier(const std::vector<float> & errors, Size patchSize);
       virtual float getError(int curWeakClassifier = -1);
 
       void replaceClassifierStatistic(int sourceIndex, int targetIndex);
@@ -374,8 +373,8 @@ namespace cv
       int m_numWeakClassifier;
       int m_selectedClassifier;
       int m_idxOfNewWeakClassifier;
-      float* m_wCorrect;
-      float* m_wWrong;
+      std::vector<float> m_wCorrect;
+      std::vector<float> m_wWrong;
       int m_iterationInit;
       void generateRandomClassifier (Size patchSize);
 
@@ -391,7 +390,7 @@ namespace cv
         bool useFeatureExchange = false, 
         int iterationInit = 0);
 
-      ~StrongClassifier();
+      virtual ~StrongClassifier();
 
       virtual float eval(ImageRepresentation *image, Rect ROI); 
 
@@ -417,7 +416,7 @@ namespace cv
       int numAllWeakClassifier;
 
       BaseClassifier** baseClassifier;
-      float* alpha;
+      std::vector<float> alpha;
       cv::Size patchSize;
 
       bool useFeatureExchange;
@@ -437,8 +436,8 @@ namespace cv
     private:
 
       bool * m_errorMask;
-      float* m_errors;
-      float* m_sumErrors;
+      std::vector<float> m_errors;
+      std::vector<float> m_sumErrors;
     };
 
     class StrongClassifierStandard  : public StrongClassifier
@@ -455,8 +454,7 @@ namespace cv
     private:
 
       bool *m_errorMask;
-      float *m_errors;
-
+      std::vector<float> m_errors;
     };
 
     class StrongClassifierStandardSemi  : public StrongClassifier
@@ -474,10 +472,9 @@ namespace cv
     private:
 
       bool *m_errorMask;
-      float *m_errors;
-      float* m_pseudoLambda;
-      int* m_pseudoTarget;
-
+      std::vector<float> m_errors;
+      std::vector<float> m_pseudoLambda;
+      std::vector<int> m_pseudoTarget;
     };
 
     class Detector
@@ -502,8 +499,8 @@ namespace cv
 
       int getPatchIdxOfDetection(int detectionIdx);
 
-      int* getIdxDetections(){return m_idxDetections;};
-      float* getConfidences(){return m_confidences;};
+      const std::vector<int> & getIdxDetections() const {return m_idxDetections;};
+      const std::vector<float> & getConfidences() const {return m_confidences;};
 
       const cv::Mat & getConfImageDisplay() const { return m_confImageDisplay; }
 
@@ -513,10 +510,10 @@ namespace cv
       void prepareDetectionsMemory(int numDetections);
 
       StrongClassifier* m_classifier;
-      float* m_confidences;
+      std::vector<float> m_confidences;
       int m_sizeConfidences;
       int m_numDetections;
-      int* m_idxDetections;
+      std::vector<int> m_idxDetections;
       int m_sizeDetections;
       int m_idxBestDetection;
       float m_maxConfidence;
@@ -554,7 +551,6 @@ namespace cv
     {
     public:
       SemiBoostingTracker(ImageRepresentation* image, Rect initPatch, Rect validROI, int numBaseClassifier);
-      virtual ~SemiBoostingTracker();
 
       bool track(ImageRepresentation* image, Patches* patches);
 
@@ -566,9 +562,9 @@ namespace cv
       const cv::Mat & getConfImageDisplay() const { return detector->getConfImageDisplay(); }
 
     private:
-      StrongClassifier* classifierOff;
-      StrongClassifierStandardSemi* classifier;
-      Detector* detector;
+      cv::Ptr<StrongClassifier> classifierOff;
+      cv::Ptr<StrongClassifierStandardSemi> classifier;
+      cv::Ptr<Detector> detector;
       Rect trackedPatch;
       Rect validROI;
       float confidence;

@@ -230,7 +230,6 @@ namespace cv
     Patches::Patches(void)
     {
       this->num = 1;
-      patches = new Rect;
       ROI.height = 0;
       ROI.width = 0;
       ROI.y = 0;
@@ -240,16 +239,11 @@ namespace cv
     Patches::Patches(int num)
     {
       this->num = num;
-      patches = new Rect[num];
+      patches.resize(num);
       ROI.height = 0;
       ROI.width = 0;
       ROI.y = 0;
       ROI.x = 0;
-    }
-
-    Patches::~Patches(void)
-    {
-      delete[] patches;
     }
 
     Rect Patches::getRect(int index)
@@ -361,7 +355,7 @@ namespace cv
       m_patchGrid.width = ((int)((float)(ROI.width-patchSize.width)/stepCol)+1);
 
       num = m_patchGrid.width * m_patchGrid.height;
-      patches = new Rect[num];
+      patches.resize(num);
       int curPatch = 0;
 
       m_rectUpperLeft = m_rectUpperRight = m_rectLowerLeft = m_rectLowerRight = cv::Rect(0, 0, patchSize.width, patchSize.height);
@@ -476,7 +470,7 @@ namespace cv
 
         num += ((int)((float)(ROI.width-curPatchSize.width)/stepCol)+1)*((int)((float)(ROI.height-curPatchSize.height)/stepRow)+1);
       }
-      patches = new Rect[num];
+      patches.resize(num);
 
       int curPatch = 0;
       curScaleFactor = 1;
@@ -616,27 +610,13 @@ namespace cv
 #define INITSIGMA( numAreas ) ( static_cast<float>( sqrt( 256.0f*256.0f / 12.0f * (numAreas) ) ) );
 
     FeatureHaar::FeatureHaar(Size patchSize)
-      : m_areas(NULL), m_weights(NULL), m_scaleAreas(NULL), m_scaleWeights(NULL)
     {
       try {
         generateRandomFeature(patchSize);
       }
       catch (...) {
-        delete[] m_scaleWeights;
-        delete[] m_scaleAreas;
-        delete[] m_areas;
-        delete[] m_weights;
         throw;
       }
-    }
-
-
-    FeatureHaar::~FeatureHaar()
-    {
-      delete[] m_scaleWeights;
-      delete[] m_scaleAreas;
-      delete[] m_areas;
-      delete[] m_weights;
     }
 
     void FeatureHaar::generateRandomFeature(Size patchSize)
@@ -678,10 +658,10 @@ namespace cv
 
           strcpy (m_type, "Type1");
           m_numAreas = 2;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -1;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -710,10 +690,10 @@ namespace cv
 
           strcpy (m_type, "Type2");
           m_numAreas = 2;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -1;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -741,11 +721,11 @@ namespace cv
 
           strcpy (m_type, "Type3");
           m_numAreas = 3;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -2;
           m_weights[2] = 1;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -776,11 +756,11 @@ namespace cv
 
           strcpy (m_type, "Type3");
           m_numAreas = 3;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -2;
           m_weights[2] = 1;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -811,12 +791,12 @@ namespace cv
 
           strcpy (m_type, "Type5");
           m_numAreas = 4;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -1;
           m_weights[2] = -1;
           m_weights[3] = 1;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -851,10 +831,10 @@ namespace cv
 
           strcpy (m_type, "Type6");
           m_numAreas = 2;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -9;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = 3*baseDim.height;
@@ -881,11 +861,11 @@ namespace cv
 
           strcpy (m_type, "Type7");
           m_numAreas = 3;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -2;
           m_weights[2] = 1;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -918,11 +898,11 @@ namespace cv
 
           strcpy (m_type, "Type8");
           m_numAreas = 3;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -2;
           m_weights[2] = 1;
-          m_areas= new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -953,10 +933,10 @@ namespace cv
 
           strcpy (m_type, "Type9");
           m_numAreas = 2;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -2;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = 3*baseDim.height;
@@ -983,11 +963,11 @@ namespace cv
 
           strcpy (m_type, "Type10");
           m_numAreas = 3;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -1;
           m_weights[2] = 1;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -1018,11 +998,11 @@ namespace cv
 
           strcpy (m_type, "Type11");
           m_numAreas = 3;
-          m_weights = new int[m_numAreas];
+          m_weights.resize(m_numAreas);
           m_weights[0] = 1;
           m_weights[1] = -1;
           m_weights[2] = 1;
-          m_areas = new Rect[m_numAreas];
+          m_areas.resize(m_numAreas);
           m_areas[0].x = position.x;
           m_areas[0].y = position.y;
           m_areas[0].height = baseDim.height;
@@ -1046,8 +1026,8 @@ namespace cv
       m_initSize = patchSize;
       m_curSize = m_initSize;
       m_scaleFactorWidth = m_scaleFactorHeight = 1.0f;
-      m_scaleAreas = new Rect[m_numAreas];
-      m_scaleWeights = new float[m_numAreas];
+      m_scaleAreas.resize(m_numAreas);
+      m_scaleWeights.resize(m_numAreas);
       for (int curArea = 0; curArea<m_numAreas; curArea++) {
         m_scaleAreas[curArea] = m_areas[curArea];
         m_scaleWeights[curArea] = (float)m_weights[curArea] /
@@ -1281,11 +1261,9 @@ namespace cv
       m_referenceWeakClassifier = false;
       m_selectedClassifier = 0;
 
-      m_wCorrect = new float[numWeakClassifier+iterationInit];
-      memset (m_wCorrect, 0, sizeof(float)*numWeakClassifier+iterationInit);
+      m_wCorrect.assign(numWeakClassifier+iterationInit, 0);
 
-      m_wWrong = new float[numWeakClassifier+iterationInit];
-      memset (m_wWrong, 0, sizeof(float)*numWeakClassifier+iterationInit);
+      m_wWrong.assign(numWeakClassifier+iterationInit, 0);
 
       for (int curWeakClassifier = 0; curWeakClassifier < numWeakClassifier+iterationInit; curWeakClassifier++)
         m_wWrong[curWeakClassifier] = m_wCorrect[curWeakClassifier] = 1;
@@ -1300,10 +1278,8 @@ namespace cv
       m_selectedClassifier = 0;
       m_idxOfNewWeakClassifier = numWeakClassifier;
 
-      m_wCorrect = new float[numWeakClassifier+iterationInit];
-      memset (m_wCorrect, 0, sizeof(float)*numWeakClassifier+iterationInit);
-      m_wWrong = new float[numWeakClassifier+iterationInit];
-      memset (m_wWrong, 0, sizeof(float)*numWeakClassifier+iterationInit);
+      m_wCorrect.assign(numWeakClassifier+iterationInit, 0);
+      m_wWrong.assign(numWeakClassifier+iterationInit, 0);
 
       for (int curWeakClassifier = 0; curWeakClassifier < numWeakClassifier+iterationInit; curWeakClassifier++)
         m_wWrong[curWeakClassifier] = m_wCorrect[curWeakClassifier] = 1;
@@ -1318,9 +1294,8 @@ namespace cv
 
         delete[] weakClassifier;
       }
-      if (m_wCorrect!=NULL) delete[] m_wCorrect;
-      if (m_wWrong!=NULL) delete[] m_wWrong;
-
+      m_wCorrect.clear();
+      m_wWrong.clear();
     }
 
     void BaseClassifier::generateRandomClassifier (Size patchSize)
@@ -1377,7 +1352,7 @@ namespace cv
       return m_wWrong[curWeakClassifier]/(m_wWrong[curWeakClassifier]+m_wCorrect[curWeakClassifier]);
     }
 
-    int BaseClassifier::selectBestClassifier(bool* errorMask, float importance, float* errors) 
+    int BaseClassifier::selectBestClassifier(bool* errorMask, float importance, std::vector<float> & errors)
     {
       float minError = FLT_MAX;
       int tmp_selectedClassifier = m_selectedClassifier;
@@ -1438,7 +1413,7 @@ namespace cv
       }
     }
 
-    int BaseClassifier::replaceWeakestClassifier(float* errors, Size patchSize)
+    int BaseClassifier::replaceWeakestClassifier(const std::vector<float> & errors, Size patchSize)
     {
       float maxError = 0.0f;
       int index = -1;
@@ -1501,8 +1476,7 @@ namespace cv
       this->numBaseClassifier = numBaseClassifier;
       this->numAllWeakClassifier = numWeakClassifier+iterationInit;
 
-      alpha = new float[numBaseClassifier];
-      memset(alpha, 0x00, sizeof(float)*numBaseClassifier);
+      alpha.assign(numBaseClassifier, 0);
 
       this->patchSize = patchSize;
       this->useFeatureExchange = useFeatureExchange;
@@ -1513,7 +1487,7 @@ namespace cv
       for (int curBaseClassifier = 0; curBaseClassifier< numBaseClassifier; curBaseClassifier++)
         delete baseClassifier[curBaseClassifier];
       delete[] baseClassifier;
-      delete[] alpha;
+      alpha.clear();
     }
 
     float StrongClassifier::getFeatureValue(ImageRepresentation *image, Rect ROI, int baseClassifierIdx)
@@ -1603,23 +1577,21 @@ namespace cv
         baseClassifier[curBaseClassifier] = new BaseClassifier(numWeakClassifier, iterationInit, baseClassifier[0]->getReferenceWeakClassifier());
 
       m_errorMask = new bool[numAllWeakClassifier];
-      m_errors = new float[numAllWeakClassifier];
-      m_sumErrors = new float[numAllWeakClassifier];
+      m_errors.resize(numAllWeakClassifier);
+      m_sumErrors.resize(numAllWeakClassifier);
     }
 
     StrongClassifierDirectSelection::~StrongClassifierDirectSelection()
     {
       delete[] m_errorMask;
-      delete[] m_errors;
-      delete[] m_sumErrors;
     }
 
 
     bool StrongClassifierDirectSelection::update(ImageRepresentation *image, Rect ROI, int target, float importance)
     {
       memset(m_errorMask, 0, numAllWeakClassifier*sizeof(bool));
-      memset(m_errors, 0, numAllWeakClassifier*sizeof(float));
-      memset(m_sumErrors, 0, numAllWeakClassifier*sizeof(float));
+      m_errors.assign(numAllWeakClassifier, 0);
+      m_sumErrors.assign(numAllWeakClassifier, 0);
 
       baseClassifier[0]->trainClassifier(image, ROI, target, importance, m_errorMask);
       for (int curBaseClassifier = 0; curBaseClassifier < numBaseClassifier; curBaseClassifier++)
@@ -1682,13 +1654,12 @@ namespace cv
       }
 
       m_errorMask = new bool[numAllWeakClassifier];
-      m_errors = new float[numAllWeakClassifier];
+      m_errors.resize(numAllWeakClassifier);
     }
 
     StrongClassifierStandard::~StrongClassifierStandard()
     {
       delete[] m_errorMask;
-      delete[] m_errors;
     }
 
 
@@ -1698,7 +1669,7 @@ namespace cv
       for (curBaseClassifier = 0; curBaseClassifier<numBaseClassifier; curBaseClassifier++)
       {
         memset(m_errorMask, 0x00, numAllWeakClassifier*sizeof(bool));
-        memset(m_errors, 0x00, numAllWeakClassifier*sizeof(float));
+        m_errors.assign(numAllWeakClassifier, 0);
 
         int selectedClassifier;
         baseClassifier[curBaseClassifier]->trainClassifier(image, ROI, target, importance, m_errorMask);
@@ -1739,8 +1710,8 @@ namespace cv
       // init Base Classifier
       baseClassifier = new BaseClassifier*[numBaseClassifier];
 
-      m_pseudoTarget = new int[numBaseClassifier];
-      m_pseudoLambda = new float[numBaseClassifier];
+      m_pseudoTarget.resize(numBaseClassifier);
+      m_pseudoLambda.resize(numBaseClassifier);
 
       for (int curBaseClassifier = 0; curBaseClassifier< numBaseClassifier; curBaseClassifier++)
       {
@@ -1748,16 +1719,12 @@ namespace cv
       }
 
       m_errorMask = new bool[numAllWeakClassifier];
-      m_errors = new float[numAllWeakClassifier];
+      m_errors.resize(numAllWeakClassifier);
     }
 
     StrongClassifierStandardSemi::~StrongClassifierStandardSemi()
     {
       delete[] m_errorMask;
-      delete[] m_errors;
-
-      delete[] m_pseudoTarget;
-      delete[] m_pseudoLambda;
     }
 
 
@@ -1778,7 +1745,7 @@ namespace cv
       for (curBaseClassifier = 0; curBaseClassifier<numBaseClassifier; curBaseClassifier++)
       {
         memset(m_errorMask, 0x00, numAllWeakClassifier*sizeof(bool));
-        memset(m_errors, 0x00, numAllWeakClassifier*sizeof(float));
+        m_errors.assign(numAllWeakClassifier, 0);
 
         int selectedClassifier;
         {
@@ -1822,20 +1789,14 @@ namespace cv
     {
       this->m_classifier = classifier;
 
-      m_confidences = NULL;
       m_sizeConfidences = 0;
       m_maxConfidence = -FLT_MAX;
       m_numDetections = 0;
-      m_idxDetections = NULL;
       m_idxBestDetection = -1;
     }
 
     Detector::~Detector()
     {
-      if (m_idxDetections != NULL)
-        delete[] m_idxDetections;
-      if (m_confidences != NULL)
-        delete[] m_confidences;
     }
 
     void Detector::prepareConfidencesMemory(int numPatches)
@@ -1843,11 +1804,8 @@ namespace cv
       if ( numPatches <= m_sizeConfidences )	
         return;							
 
-      if ( m_confidences )
-        delete[] m_confidences;
-
       m_sizeConfidences = numPatches;
-      m_confidences = new float[numPatches];
+      m_confidences.resize(numPatches);
     }
 
     void Detector::prepareDetectionsMemory(int numDetections)
@@ -1855,10 +1813,8 @@ namespace cv
       if ( numDetections <= m_sizeDetections )	
         return;							
 
-      if ( m_idxDetections )
-        delete[] m_idxDetections;
       m_sizeDetections = numDetections;
-      m_idxDetections = new int[numDetections];
+      m_idxDetections.resize(numDetections);
     }
 
 
@@ -2160,12 +2116,6 @@ namespace cv
       confidence = -1;
       priorConfidence = -1;
 
-    }
-
-    SemiBoostingTracker::~SemiBoostingTracker(void)
-    {
-      delete detector;
-      delete classifier;
     }
 
     bool SemiBoostingTracker::track(ImageRepresentation* image, Patches* patches)
