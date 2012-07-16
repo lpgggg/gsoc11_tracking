@@ -46,19 +46,6 @@ namespace cv
 {
   namespace boosting
   {
-    class Color
-    {
-    public: 
-
-      Color();
-      Color(int red, int green, int blue);
-      Color(int idx);
-
-      int red;
-      int green;
-      int blue;
-    };
-
     class ImageRepresentation  
     {
     public:
@@ -66,7 +53,6 @@ namespace cv
       ImageRepresentation(unsigned char* image, Size imagSize);
       ImageRepresentation(unsigned char* image, Size imagSize, Rect imageROI);
       void defaultInit(unsigned char* image, Size imageSize);
-      virtual ~ImageRepresentation();
 
       int getSum(Rect imageROI);
       float getMean(Rect imagROI);
@@ -89,8 +75,8 @@ namespace cv
       void createIntegralsOfROI(unsigned char* image);
 
       cv::Size m_imageSize;
-      unsigned int* intImage;
-      long unsigned int* intSqImage;
+      cv::Mat_<int> intImage;
+      cv::Mat_<float> intSqImage;
       Rect m_ROI;
       cv::Point2i m_offset;
     };

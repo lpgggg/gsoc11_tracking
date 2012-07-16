@@ -53,36 +53,6 @@ namespace cv
 {
   namespace boosting
   {
-
-    Color::Color()
-    {
-      red = 255;
-      blue = 255;
-      green = 255;
-    }
-
-    Color::Color(int red, int green, int blue)
-    {
-      this->red = red;
-      this->green = green;
-      this->blue = blue;
-    }
-
-    Color::Color(int idx)
-    {
-      switch (idx%6)
-      {
-      case 0: red = 255; blue = 0; green = 0; break;
-      case 1: red = 0; blue = 255; green = 0; break;
-      case 2: red = 0; blue = 0; green = 255; break;
-      case 3: red = 255; blue = 255; green = 0; break;
-      case 4: red = 0; blue = 255; green = 255; break;
-      case 5: red = 255; blue = 255; green = 255; break;
-      default: red = 255; blue = 255; green = 255; break;
-      }
-    }
-
-
     cv::Rect RectMultiply(const cv::Rect & rect, float f)
     {
       cv::Rect r_tmp;
@@ -133,11 +103,6 @@ namespace cv
 
       m_useVariance = false;
 
-      intImage = NULL;
-      intSqImage = NULL;
-      intImage = new unsigned int[(m_ROI.width+1)*(m_ROI.height+1)];
-      intSqImage = new long unsigned int[(m_ROI.width+1)*(m_ROI.height+1)];
-
       if (image!= NULL)
         this->createIntegralsOfROI(image);
     }
@@ -155,24 +120,10 @@ namespace cv
       m_ROI.x = 0;
       m_offset = cv::Point2i(m_ROI.x, m_ROI.y);
 
-      intImage = NULL;
-      intSqImage = NULL;
-
-
-      intImage = new unsigned int[(m_ROI.width+1)*(m_ROI.height+1)];
-      intSqImage = new long unsigned int[(m_ROI.width+1)*(m_ROI.height+1)];
-
       if (image != NULL)
         this->createIntegralsOfROI(image);
 
       return;
-    }
-
-    ImageRepresentation::~ImageRepresentation()
-    {
-
-      delete[] intImage;
-      delete[] intSqImage;
     }
 
     void ImageRepresentation::setNewImage(unsigned char* image)
@@ -182,13 +133,6 @@ namespace cv
 
     void ImageRepresentation::setNewROI(Rect ROI)
     {
-      if (this->m_ROI.height*this->m_ROI.width != ROI.height*ROI.width)
-      {	
-        delete[] intImage;
-        delete[] intSqImage;
-        intImage = new unsigned int[(ROI.width+1)*(ROI.height+1)];
-        intSqImage = new long unsigned int[(ROI.width+1)*(ROI.height+1)];
-      }
       this->m_ROI = ROI;
       m_offset = cv::Point2i(ROI.x, ROI.y);
       return;
@@ -209,7 +153,7 @@ namespace cv
     unsigned int ImageRepresentation::getValue(cv::Point2i imagePosition)
     {
       cv::Point2i position = imagePosition-m_offset;
-      return intImage[position.y*(this->m_ROI.width+1)+position.x];
+      return intImage(position.y,position.x);
     }
 
     long ImageRepresentation::getSqSum(Rect imageROI)
@@ -218,8 +162,6 @@ namespace cv
       int OriginX = imageROI.x-m_offset.x;
       int OriginY = imageROI.y-m_offset.y;
 
-      long unsigned int *OriginPtr = &intSqImage[OriginY * (m_ROI.width+1) + OriginX];
-
       // Check and fix width and height
       int Width  = imageROI.width;
       int Height = imageROI.height;
@@ -227,14 +169,11 @@ namespace cv
       if ( OriginX+Width  >= m_ROI.width  ) Width  = m_ROI.width  - OriginX;
       if ( OriginY+Height >= m_ROI.height ) Height = m_ROI.height  - OriginY;
 
-      unsigned long down  = Height * (m_ROI.width+1);
-      unsigned long right = Width;
-
-      long int value = OriginPtr[down+right] + OriginPtr[0] - OriginPtr[right] - OriginPtr[down];
+      long int value = intSqImage(OriginY + Height, OriginX + Width) + intSqImage(OriginY, OriginX)
+          - intSqImage(OriginY, OriginX + Width) - intSqImage(OriginY + Height, OriginX);
 
       assert (value >= 0);
 
-      OriginPtr = NULL;
       return (long)value;
 
     }
@@ -259,8 +198,6 @@ namespace cv
       int OriginX = imageROI.x-m_offset.x;
       int OriginY = imageROI.y-m_offset.y;
 
-      unsigned int *OriginPtr = &intImage[OriginY * (m_ROI.width+1) + OriginX];
-
       // Check and fix width and height
       int Width  = imageROI.width;
       int Height = imageROI.height;
@@ -268,13 +205,9 @@ namespace cv
       if ( OriginX+Width  >= m_ROI.width  ) Width  = m_ROI.width  - OriginX;
       if ( OriginY+Height >= m_ROI.height ) Height = m_ROI.height  - OriginY;
 
-      unsigned long down  = Height * (m_ROI.width+1);
-      unsigned long right = Width;
+      int value = intImage(OriginY + Height, OriginX + Width) + intImage(OriginY, OriginX)
+              - intImage(OriginY, OriginX + Width) - intImage(OriginY + Height, OriginX);
 
-      int value = OriginPtr[down+right] + OriginPtr[0] - OriginPtr[right] - OriginPtr[down];
-
-
-      OriginPtr = NULL;
       return value;
     }
 
@@ -305,8 +238,8 @@ namespace cv
       curPointer = 0;
       dptr = 0;
 
-      memset(intImage, 0x00, ROIlength * sizeof( unsigned int ) );
-      memset(intSqImage, 0x00, ROIlength * sizeof( unsigned long int ) );
+      intImage = cv::Mat_<int>::zeros(m_ROI.height+1, m_ROI.width+1);
+      intSqImage = cv::Mat_<float>::zeros(m_ROI.height+1, m_ROI.width+1);
 
       // current sum
       unsigned int value_tmp = 0;
@@ -330,8 +263,8 @@ namespace cv
           value_tmpSq += image[curPointer]*image[curPointer];
 
           // update Integral Image
-          intImage[dptr] = intImage[ dptr - (m_ROI.width+1) ] + value_tmp;
-          intSqImage[dptr] = intSqImage[ dptr - (m_ROI.width+1) ] + value_tmpSq;
+          intImage(dptr) = intImage( dptr - (m_ROI.width+1) ) + value_tmp;
+          intSqImage(dptr) = intSqImage( dptr - (m_ROI.width+1) ) + value_tmpSq;
 
           dptr++;
           curPointer++;
