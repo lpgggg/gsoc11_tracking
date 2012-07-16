@@ -757,53 +757,6 @@ namespace cv
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
-		
-		cv::CascadeClassifier Tracker::facecascade = cv::CascadeClassifier();
-
-    bool
-    Tracker::initFace(TrackerParams & params, const cv::Mat &frame)
-		{
-			const char* cascade_name = "haarcascade_frontalface_alt_tree.xml";
-			const int minsz = 20;
-			if( Tracker::facecascade.empty() )
-				Tracker::facecascade.load(cascade_name);
-
-      cv::Mat gray;
-      cv::cvtColor(frame, gray, CV_BGR2GRAY);
-      cv::equalizeHist(gray, gray);
-
-			std::vector<cv::Rect> faces;
-			facecascade.detectMultiScale(gray, faces, 1.05, 3, CV_HAAR_DO_CANNY_PRUNING ,cvSize(minsz, minsz));
-			
-			bool is_good = false;
-			cv::Rect r;
-      for (int index = faces.size() - 1; index >= 0; --index)
-      {
-        r = faces[index];
-        if (r.width < minsz || r.height < minsz || (r.y + r.height + 10) > frame.rows || (r.x + r.width) > frame.cols
-            || r.y < 0 || r.x < 0)
-          continue;
-        is_good = true;
-        break;
-      }
-      if (!is_good)
-        return false;
-
-			//fprintf(stderr,"x=%f y=%f xmax=%f ymax=%f imgw=%f imgh=%f\n",(float)r->x,(float)r->y,(float)r->x+r->width,(float)r->y+r->height,(float)frame.cols(),(float)frame.rows());
-			
-			params._initstate.resize(4);
-      params._initstate[0] = (float) r.x; // - r->width;
-      params._initstate[1] = (float) r.y; // - r->height;
-      params._initstate[2] = (float) r.width;
-      params._initstate[3] = (float) r.height + 10;
-			
-			return true;
-		}
-		
-		
-		
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		TrackerParams::TrackerParams()
 		{
 			_boxcolor.resize(3);

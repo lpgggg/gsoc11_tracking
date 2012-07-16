@@ -35,6 +35,35 @@ int main(int argc, char** argv)
   // Some book-keeping
   bool is_tracker_initialized = false;
   CvRect init_bb = cvRect(122,58,75,97);  // the initial tracking bounding box
+
+
+ /* const char* cascade_name = "haarcascade_frontalface_alt_tree.xml";
+  const int minsz = 20;
+  if( Tracker::facecascade.empty() )
+    Tracker::facecascade.load(cascade_name);
+
+  cv::Mat gray;
+  cv::cvtColor(frame, gray, CV_BGR2GRAY);
+  cv::equalizeHist(gray, gray);
+
+  std::vector<cv::Rect> faces;
+  facecascade.detectMultiScale(gray, faces, 1.05, 3, CV_HAAR_DO_CANNY_PRUNING ,cvSize(minsz, minsz));
+
+  bool is_good = false;
+  cv::Rect r;
+  for (int index = faces.size() - 1; index >= 0; --index)
+  {
+    r = faces[index];
+    if (r.width < minsz || r.height < minsz || (r.y + r.height + 10) > frame.rows || (r.x + r.width) > frame.cols
+        || r.y < 0 || r.x < 0)
+      continue;
+    is_good = true;
+    break;
+  }
+*/
+
+
+
   cv::Rect theTrack;
   bool tracker_failed = false;
 
