@@ -1363,6 +1363,107 @@ namespace cv
 			return sum;
 		}
 		
+    void
+    drawRect(cv::Mat & img, float width, float height, float x, float y, float sc, float th, int lineWidth, int R,
+             int G, int B)
+    {
+
+      sc = 1.0f/sc;
+      th = -th;
+
+      double cth = cos(th)*sc;
+      double sth = sin(th)*sc;
+
+      CvPoint p1, p2, p3, p4;
+
+      p1.x = (int)(-cth*width/2 + sth*height/2 + width/2 + x);
+      p1.y = (int)(-sth*width/2 - cth*height/2 + height/2 + y);
+
+      p2.x = (int)(cth*width/2 + sth*height/2 + width/2 + x);
+      p2.y = (int)(sth*width/2 - cth*height/2 + height/2 + y);
+
+      p3.x = (int)(cth*width/2 - sth*height/2 + width/2 + x);
+      p3.y = (int)(sth*width/2 + cth*height/2 + height/2 + y);
+
+      p4.x = (int)(-cth*width/2 - sth*height/2 + width/2 + x);
+      p4.y = (int)(-sth*width/2 + cth*height/2 + height/2 + y);
+
+      //cout << p1.x << " " << p1.y << endl;
+      //cout << p2.x << " " << p2.y << endl;
+      //cout << p3.x << " " << p3.y << endl;
+      //cout << p4.x << " " << p4.y << endl;
+
+      cv::line(img, p1, p2, CV_RGB( R, G, B), lineWidth, CV_AA );
+      cv::line(img, p2, p3, CV_RGB( R, G, B), lineWidth, CV_AA );
+      cv::line(img, p3, p4, CV_RGB( R, G, B), lineWidth, CV_AA );
+      cv::line(img, p4, p1, CV_RGB( R, G, B), lineWidth, CV_AA );
+    }
+
+    void
+    drawText(cv::Mat & img, const char* txt, float x, float y, int R, int G, int B)
+    {
+      CvPoint p = cvPoint((int) x, (int) y);
+      cv::putText(img, txt, p, CV_FONT_HERSHEY_SIMPLEX, 1.0, CV_RGB(R, G, B));
+    }
+
+    void
+    display(const cv::Mat & img, int fignum, float p)
+    {
+      assert(size() > 0);
+      char name[1024];
+      sprintf(name, "Figure %d", fignum);
+      cvNamedWindow(name, 0/*CV_WINDOW_AUTOSIZE*/);
+      cv::imshow(name, img);
+      cvResizeWindow(
+          name,
+          std::max<int>(static_cast<int>(static_cast<float>(img.cols) * p), 200),
+          std::max<int>(static_cast<int>(static_cast<float>(img.rows) * p),
+                        static_cast<int>(static_cast<float>(img.rows) * (200.0f / static_cast<float>(img.cols)))));
+      //cvWaitKey(0);//DEBUG
+    }
+
+    bool
+    DLMRead(cv::Mat_<unsigned char> img, const char *fname, const char *delim)
+    {
+      std::ifstream strm;
+      strm.open(fname, std::ios::in);
+      if (strm.fail())
+        return false;
+      char * tline = new char[40000000];
+
+      // get number of cols
+      strm.getline(tline, 40000000);
+      int ncols = (strtok(tline, " ,") == NULL) ? 0 : 1;
+      while (strtok(NULL, " ,") != NULL)
+        ncols++;
+
+      // read in each row
+      strm.seekg(0, std::ios::beg);
+      cv::Mat_<unsigned char> rowVec;
+      std::vector<cv::Mat_<unsigned char> > allRowVecs;
+      while (!strm.eof() && strm.peek() >= 0)
+      {
+        strm.getline(tline, 40000000);
+        rowVec.create(1, ncols);
+        rowVec(0, 0) = atof(strtok(tline, delim));
+        for (int col = 1; col < ncols; col++)
+          rowVec(0, col) = atof(strtok(NULL, delim));
+        allRowVecs.push_back(rowVec);
+      }
+      int mrows = allRowVecs.size();
+
+      // finally create matrix
+      img.create(mrows, ncols);
+      for (int row = 0; row < mrows; row++)
+      {
+        rowVec = allRowVecs[row];
+        for (int col = 0; col < ncols; col++)
+          img(row, col) = rowVec(0, col);
+      }
+      strm.close();
+      return true;
+    }
+
 		
 		Sample::Sample(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs,int row, int col, int width, int height, float weight)
 		{
@@ -1487,26 +1588,27 @@ namespace cv
 			
 			_channel = p->_useChannels[randint(0,p->_numCh-1)];
 		}
-		
-		Matrixu			HaarFtr::toViz()
-		{
-			Matrixu v(_height,_width,3);
-			v.Set(0);
-			v._keepIpl = true;
-			
-			for( uint k=0; k<_rects.size(); k++ )
-			{
-				if( _weights[k] < 0 )
-					v.drawRect(_rects[k],1,(int)(255*std::max<double>(-1*_weights[k],0.5)),0,0);
-				else
-					v.drawRect(_rects[k],1,0,(int)(255*std::max<double>(_weights[k],0.5)),(int)(255*std::max<double>(_weights[k],0.5)));
-			}
-			
-			v._keepIpl = false;
-			return v;
-		}
-		
-		
+
+    cv::Mat
+    HaarFtr::toViz()
+    {
+      cv::Mat_<cv::Vec3b> v = cv::Mat_<cv::Vec3b>::zeros(_height, _width);
+
+      for (uint k = 0; k < _rects.size(); k++)
+      {
+        if (_weights[k] < 0)
+          cv::rectangle(v, cv::Point2i(_rects[k].x, _rects[k].y),
+                        cv::Point2i(_rects[k].x + _rects[k].width, _rects[k].y + _rects[k].height),
+                        CV_RGB((255 * std::max<double>(-1 * _weights[k], 0.5)), 0, 0), 1);
+        else
+          cv::rectangle(v, cv::Point2i(_rects[k].x, _rects[k].y),
+                        cv::Point2i(_rects[k].x + _rects[k].width, _rects[k].y + _rects[k].height),
+                        CV_RGB(0, 255 * std::max<double>(_weights[k], 0.5), 255 * std::max<double>(_weights[k], 0.5)),
+                        1);
+      }
+
+      return v;
+    }
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
@@ -1569,11 +1671,11 @@ namespace cv
 		void			Ftr::toViz( vecFtr &ftrs, const char *dirname )
 		{
 			char fname[1024];
-			Matrixu img;
+      cv::Mat img;
 			for( uint k=0; k<ftrs.size(); k++ ){
 				sprintf(fname,"%s/ftr%05d.png",dirname,k);
 				img = ftrs[k]->toViz();
-				img.SaveImage(fname);
+        cv::imwrite(fname, img);
 			}
 		}
 		
@@ -1601,12 +1703,12 @@ namespace cv
 			return clf;
 		}
 
-    Matrixf
+		cv::Mat_<float>
     ClfStrong::applyToImage(ClfStrong *clf, const cv::Mat & img, bool logR)
     {
       std::vector<cv::Mat_<float> > ii_imgs;
       compute_integral(img, ii_imgs);
-			Matrixf resp(img.rows,img.cols);
+      cv::Mat_<float> resp(img.rows,img.cols);
 			int height = clf->_params->_ftrParams->_height;
 			int width = clf->_params->_ftrParams->_width;
 			
@@ -1837,7 +1939,7 @@ namespace cv
 					abortError(__LINE__,__FILE__,"incorrect weak clf name");
 			
 			if( params->_storeFtrHistory )
-				this->_ftrHist.Resize(_myParams->_numFeat,2000);
+        this->_ftrHist.create(_myParams->_numFeat, 2000);
 			
 			_counter=0;
 		}
@@ -1982,11 +2084,11 @@ namespace cv
 			
 			/////// DEBUG /////// display actual probability map
 			if( _trparams._debugv ){
-				Matrixf probimg(frame.rows,frame.cols);
+        cv::Mat_<float> probimg(frame.rows, frame.cols);
 				for( uint k=0; k<(uint)detectx.size(); k++ )
 					probimg(detectx[k]._row, detectx[k]._col) = prob[k];
 				
-				probimg.convert2img().display(2,2);
+				display(probimg, 2, 2);
 				cvWaitKey(1);
 			}
 			
@@ -2026,89 +2128,74 @@ namespace cv
 		
 		cv::CascadeClassifier Tracker::facecascade = cv::CascadeClassifier();
 
-		void			Tracker::replayTracker(vector<Matrixu> &vid, const std::string statesfile, std::string outputvid, uint R, uint G, uint B)
-		{
-			Matrixf states;
-			states.DLMRead(statesfile.c_str());
-			Matrixu colorframe;
+    void
+    Tracker::replayTracker(const std::vector<cv::Mat> &vid, const std::string statesfile, std::string outputvid, uint R,
+                           uint G, uint B)
+    {
+      cv::Mat_<float> states;
+      DLMRead(states, statesfile.c_str(), ",");
+			cv::Mat colorframe;
 			
 			// save video file
-			CvVideoWriter* w = NULL;
-			if( ! outputvid.empty() ){
-				w = cvCreateVideoWriter( outputvid.c_str(), CV_FOURCC('I','Y','U','V'), 15, cvSize(vid[0].cols(), vid[0].rows()), 3 );
-				if( w==NULL ) abortError(__LINE__,__FILE__,"Error opening video file for output");
-			}
+      cv::VideoWriter w(outputvid.c_str(), CV_FOURCC('I', 'Y', 'U', 'V'), 15, cv::Size(vid[0].cols, vid[0].rows));
+      if (!w.isOpened())
+        abortError(__LINE__, __FILE__, "Error opening video file for output");
 			
 			for( uint k=0; k<vid.size(); k++ )
 			{	
-				vid[k].conv2RGB(colorframe);
-				colorframe.drawRect(states(k,2),states(k,3),states(k,0),states(k,1),1,0,2,R,G,B);
-				colorframe.drawText(("#"+int2str(k,3)).c_str(),1,25,255,255,0);
-				colorframe._keepIpl=true;
-				colorframe.display(1,2);
+				cv::cvtColor(vid[k], colorframe, CV_GRAY2RGB);
+				drawRect(colorframe, states(k,2),states(k,3),states(k,0),states(k,1),1,0,2,R,G,B);
+				drawText(colorframe, ("#"+int2str(k,3)).c_str(),1,25,255,255,0);
+				display(colorframe, 1,2);
 				cvWaitKey(1);
-				if( w != NULL )
-					cvWriteFrame( w, colorframe.getIpl() );
-				colorframe._keepIpl=false; colorframe.freeIpl();
-			}
-			
-			// clean up
-			if( w != NULL )
-				cvReleaseVideoWriter( &w );
-		}
-		void			Tracker::replayTrackers(vector<Matrixu> &vid, vector<std::string> statesfile, std::string outputvid, Matrixu colors)
-		{
-			Matrixu states;
-			vector<Matrixu> resvid(vid.size());
-			Matrixu colorframe;
-			
-			// save video file
-			CvVideoWriter* w = NULL;
-			if( ! outputvid.empty() ){
-				w = cvCreateVideoWriter( outputvid.c_str(), CV_FOURCC('I','Y','U','V'), 15, cvSize(vid[0].cols(), vid[0].rows()), 3 );
-				if( w==NULL ) abortError(__LINE__,__FILE__,"Error opening video file for output");
-			}
+        if (w.isOpened())
+          w << colorframe;
+      }
+    }
+    void
+    Tracker::replayTrackers(const std::vector<cv::Mat> & vid, const std::vector<std::string> & statesfile,
+                            const std::string & outputvid, const cv::Mat_<unsigned char> & colors)
+    {
+      cv::Mat_<unsigned char> states;
+      vector<cv::Mat> resvid(vid.size());
+      cv::Mat colorframe;
+
+      // save video file
+      cv::VideoWriter w(outputvid.c_str(), CV_FOURCC('I', 'Y', 'U', 'V'), 15, cv::Size(vid[0].cols, vid[0].rows));
+      if (!w.isOpened())
+        abortError(__LINE__, __FILE__, "Error opening video file for output");
 			
 			for( uint k=0; k<vid.size(); k++ ){
-				vid[k].conv2RGB(resvid[k]);
-				resvid[k].drawText(("#"+int2str(k,3)).c_str(),1,25,255,255,0);
+				cv::cvtColor(vid[k], resvid[k], CV_GRAY2RGB);
+				drawText(resvid[k], ("#"+int2str(k,3)).c_str(),1,25,255,255,0);
 			}
 			
 			for( uint j=0; j<statesfile.size(); j++ ){
-				states.DLMRead(statesfile[j].c_str());
-				for( uint k=0; k<vid.size(); k++ )	
-					resvid[k].drawRect(states(k,3),states(k,2),states(k,0),states(k,1),1,0,3,colors(j,0),colors(j,1),colors(j,2));
+        DLMRead(states, statesfile[j].c_str(), ",");
+        for (uint k = 0; k < vid.size(); k++)
+          drawRect(resvid[k], states(k, 3), states(k, 2), states(k, 0), states(k, 1), 1, 0, 3, colors(j, 0),
+                   colors(j, 1), colors(j, 2));
 			}
 			
 			for( uint k=0; k<vid.size(); k++ ){
-				resvid[k]._keepIpl=true;
-				resvid[k].display(1,2);
-				cvWaitKey(1);
-				if( w!=NULL && k<vid.size()-1)
-					Matrixu::WriteFrame(w, resvid[k]);
-				resvid[k]._keepIpl=false; resvid[k].freeIpl();
-			}
-			
-			// clean up
-			if( w != NULL )
-				cvReleaseVideoWriter( &w );
-		}
-		bool			Tracker::initFace(TrackerParams* params, Matrixu &frame)
+        display(resvid[k], 1, 2);
+        cv::waitKey(1);
+        if (w.isOpened() && k < vid.size() - 1)
+          w << resvid[k];
+      }
+    }
+    bool
+    Tracker::initFace(TrackerParams* params, const cv::Mat &frame)
 		{
 			const char* cascade_name = "haarcascade_frontalface_alt_tree.xml";
 			const int minsz = 20;
 			if( Tracker::facecascade.empty() )
 				Tracker::facecascade.load(cascade_name);
-			
-			frame.createIpl();
-			IplImage *img = frame.getIpl();
-			IplImage* gray = cvCreateImage( cvSize(img->width, img->height), IPL_DEPTH_8U, 1 );
-			cv::cvtColor(cv::Mat(img), cv::Mat(gray), CV_BGR2GRAY );
-			frame.freeIpl();
-			cv::equalizeHist(cv::Mat(gray), cv::Mat(gray));
-			
-			CvMemStorage* storage = cvCreateMemStorage(0);
-			cvClearMemStorage(storage);
+
+      cv::Mat gray;
+      cv::cvtColor(frame, gray, CV_BGR2GRAY);
+      cv::equalizeHist(gray, gray);
+
 			std::vector<cv::Rect> faces;
 			facecascade.detectMultiScale(gray, faces, 1.05, 3, CV_HAAR_DO_CANNY_PRUNING ,cvSize(minsz, minsz));
 			
@@ -2117,8 +2204,8 @@ namespace cv
       for (int index = faces.size() - 1; index >= 0; --index)
       {
         r = faces[index];
-        if (r.width < minsz || r.height < minsz || (r.y + r.height + 10) > frame.rows()
-            || (r.x + r.width) > frame.cols() || r.y < 0 || r.x < 0)
+        if (r.width < minsz || r.height < minsz || (r.y + r.height + 10) > frame.rows || (r.x + r.width) > frame.cols
+            || r.y < 0 || r.x < 0)
           continue;
         is_good = true;
         break;

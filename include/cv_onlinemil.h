@@ -1615,10 +1615,16 @@ namespace cv
 			
 			virtual float			compute( const Sample &sample ) const =0;
 			virtual void			generate( FtrParams *params ) = 0;
-			virtual Matrixu			toViz() {Matrixu empty; return empty;};
-			virtual bool			update(const SampleSet &posx, const SampleSet &negx, const Matrixf &posw, const Matrixf &negw){return false;};
-			
-			
+      virtual cv::Mat
+      toViz()
+      {
+        return cv::Mat();
+      }
+      virtual bool
+      update(const SampleSet &posx, const SampleSet &negx, const cv::Mat_<float> &posw, const cv::Mat_<float> &negw)
+      {
+        return false;
+      }
 			static void				compute( SampleSet &samples, const vecFtr &ftrs );
 			static void				compute( SampleSet &samples, Ftr *ftr, int ftrind );
 			static vecFtr			generate( FtrParams *params, uint num );
@@ -1649,7 +1655,8 @@ namespace cv
 			
 			virtual float			compute( const Sample &sample ) const;
 			virtual void			generate( FtrParams *params );
-			virtual Matrixu			toViz();
+      virtual cv::Mat
+      toViz();
 			virtual int				ftrType() { return 0; };
 			
 			
@@ -1740,7 +1747,7 @@ namespace cv
 			vecFtr				_ftrs;
 			vecFtr				_selectedFtrs;
 			StopWatch			_clfsw;
-			Matrixf				_ftrHist;
+      cv::Mat_<float> _ftrHist;
 			uint				_counter;
 			
 		public:
@@ -1752,7 +1759,8 @@ namespace cv
 			virtual vectorf		classify(SampleSet &x, bool logR=true)=0;
 			
 			static ClfStrong*	makeClf(ClfStrongParams *clfparams);
-			static Matrixf		applyToImage(ClfStrong *clf, const cv::Mat & img, bool logR=true); // returns a probability map (or log odds ratio map if logR=true)
+      static cv::Mat_<float>
+      applyToImage(ClfStrong *clf, const cv::Mat & img, bool logR = true); // returns a probability map (or log odds ratio map if logR=true)
 			
 			static void			eval(vectorf ppos, vectorf pneg, float &err, float &fp, float &fn, float thresh=0.5f);
 			static float		likl(vectorf ppos, vectorf pneg);
@@ -2237,10 +2245,14 @@ namespace cv
 		class Tracker
 		{
 		public:
-			
-			static bool		initFace(TrackerParams* params, Matrixu &frame);
-			static void		replayTracker(vector<Matrixu> &vid, const string states, string outputvid="",uint R=255, uint G=0, uint B=0);
-			static void		replayTrackers(vector<Matrixu> &vid, vector<string> statesfile, string outputvid, Matrixu colors);
+      static bool
+      initFace(TrackerParams* params, const cv::Mat & frame);
+      static void
+      replayTracker(const std::vector<cv::Mat> & vid, const std::string states, std::string outputvid = "",
+                    uint R = 255, uint G = 0, uint B = 0);
+      static void
+      replayTrackers(const std::vector<cv::Mat> & vid, const std::vector<std::string> & statesfile,
+                     const std::string & outputvid, const cv::Mat_<unsigned char> & colors);
 			
 		protected:
 			static cv::CascadeClassifier facecascade;
@@ -2258,7 +2270,11 @@ namespace cv
       track_frame(const cv::Mat & frame); // track object in a frame;  requires init() to have been called.
       bool
       init(const cv::Mat & frame, SimpleTrackerParams p, ClfStrongParams *clfparams);
-			Matrixf &		getFtrHist() { return _clf->_ftrHist; }; // only works if _clf->_storeFtrHistory is set to true.. mostly for debugging
+      const cv::Mat_<float> &
+      getFtrHist() const
+      {
+        return _clf->_ftrHist;
+      } // only works if _clf->_storeFtrHistory is set to true.. mostly for debugging
 			
 			inline void getTrackBox(cv::Rect & roi)
 			{
