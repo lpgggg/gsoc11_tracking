@@ -35,7 +35,7 @@ int main(int argc, char** argv)
   // Some book-keeping
   bool is_tracker_initialized = false;
   CvRect init_bb = cvRect(122,58,75,97);  // the initial tracking bounding box
-  CvRect theTrack;
+  cv::Rect theTrack;
   bool tracker_failed = false;
 
   // Read in images one-by-one and track them
@@ -43,8 +43,8 @@ int main(int argc, char** argv)
   for (int frame = start; frame <= stop; frame += delta)
   {
     sprintf(filename, "%s/%s%05d.%s", directory, prefix, frame, suffix);
-    IplImage* image = cvLoadImage(filename);
-    if (image == NULL)
+    cv::Mat image = cv::imread(filename);
+    if (image.empty())
     {
       std::cerr << "Error loading image file: " << filename << "!\n" << std::endl;
       break;
@@ -73,7 +73,7 @@ int main(int argc, char** argv)
     else
     {
       // Update the tracker
-      if (!tracker.update(image, &theTrack))
+      if (!tracker.update(image, theTrack))
       {
         std::cerr << "\rCould not update tracker (" << frame << ")";
         tracker_failed = true;
@@ -94,14 +94,11 @@ int main(int argc, char** argv)
     {
       box_color = CV_RGB(255,255,0);
     }
-    cvRectangle(image, cvPoint(theTrack.x,theTrack.y), 
+    cv::rectangle(image, cvPoint(theTrack.x,theTrack.y),
       cvPoint(theTrack.x+theTrack.width-1,theTrack.y+theTrack.height-1), box_color, 2);
 
     // Display the new image
-    cvShowImage("Tracker Display", image);
-
-    // Release the image memory
-    cvReleaseImage(&image);
+    cv::imshow("Tracker Display", image);
 
     // Check if the user wants to exit early
     int key = cvWaitKey(1);

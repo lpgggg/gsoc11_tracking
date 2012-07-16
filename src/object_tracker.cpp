@@ -98,18 +98,12 @@ namespace cv
 
   //---------------------------------------------------------------------------
   TrackingAlgorithm::TrackingAlgorithm()
-    : image_(NULL)
   {
   }
 
   //---------------------------------------------------------------------------
   TrackingAlgorithm::~TrackingAlgorithm()
   {
-    if (image_ != NULL)
-    {
-      cvReleaseImage(&image_);
-      image_ = NULL;
-    }
   }
 
   //
@@ -139,7 +133,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool OnlineBoostingAlgorithm::initialize(const IplImage* image, const ObjectTrackerParams& params, 
+  bool OnlineBoostingAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
     const CvRect& init_bounding_box)
   {
     // Import the image
@@ -162,7 +156,7 @@ namespace cv
     }
 
     // (Re-)Initialize the boosting tracker
-    cv::Size imageSize(image_->width, image_->height);
+    cv::Size imageSize(image_.cols, image_.rows);
     cur_frame_rep_ = new boosting::ImageRepresentation(image_, imageSize);
     cv::Rect wholeImage(0,0,imageSize.width,imageSize.height);
     cv::Rect tracking_rect = init_bounding_box;
@@ -177,8 +171,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool OnlineBoostingAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
-    CvRect* track_box)
+  bool OnlineBoostingAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
+    cv::Rect & track_box)
   {
     // Import the image
     import_image(image);
@@ -196,7 +190,7 @@ namespace cv
     }
 
     // Calculate the patches within the search region
-    cv::Size imageSize(image_->width, image_->height);
+    cv::Size imageSize(image_.cols, image_.rows);
     cv::Rect wholeImage(0,0, imageSize.width, imageSize.height);
     boosting::Patches *trackingPatches;	
     cv::Rect searchRegion = tracker_->getTrackingROI(params.search_factor_);
@@ -216,7 +210,7 @@ namespace cv
     delete trackingPatches;
 
     // Save the new tracking ROI
-    *track_box = tracker_->getTrackedPatch();
+    track_box = tracker_->getTrackedPatch();
     std::cout << "\rTracking confidence = " << tracker_->getConfidence();
 
     // Return success or failure based on whether or not the tracker has been lost
@@ -224,7 +218,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  void OnlineBoostingAlgorithm::import_image(const IplImage* image)
+  void OnlineBoostingAlgorithm::import_image(const cv::Mat & image)
   {
     // We want the internal version of the image to be gray-scale, so let's
     // do that here.  We'll handle cases where the input is either RGB, RGBA,
@@ -233,30 +227,30 @@ namespace cv
     // from every data type since that shouldn't be happening.
 
     // Make sure the input image pointer is valid
-    if (image == NULL)
+    if (image.empty())
     {
       std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
       exit(0);  // <--- CV_ERROR?
     }
 
     // First, make sure our image is allocated
-    if (image_ == NULL)
+    if (image_.empty())
     {
-      image_ = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+      image_.create(image.size(), CV_8U);
     }
 
     // Now copy it in appropriately as a gray-scale, 8-bit image
-    if (image->nChannels == 4)
+    if (image.channels() == 4)
     {
       cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
     }
-    else if (image->nChannels == 3)
+    else if (image.channels() == 3)
     {
       cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
     }
-    else if (image->nChannels == 1)
+    else if (image.channels() == 1)
     {
-      cvCopy(image, image_);
+      image.copyTo(image_);
     }
     else
     {
@@ -291,7 +285,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool SemiOnlineBoostingAlgorithm::initialize(const IplImage* image, const ObjectTrackerParams& params, 
+  bool SemiOnlineBoostingAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
     const CvRect& init_bounding_box)
   {
     // Import the image
@@ -314,7 +308,7 @@ namespace cv
     }
 
     // (Re-)Initialize the boosting tracker
-    cv::Size imageSize(image_->width, image_->height);
+    cv::Size imageSize(image_.cols, image_.rows);
     cur_frame_rep_ = new boosting::ImageRepresentation(image_, imageSize);
     cv::Rect wholeImage = cv::Rect(0,0,imageSize.width,imageSize.height);
     cv::Rect tracking_rect = init_bounding_box;
@@ -329,8 +323,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool SemiOnlineBoostingAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
-    CvRect* track_box)
+  bool SemiOnlineBoostingAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
+    cv::Rect & track_box)
   {
     // Import the image
     import_image(image);
@@ -348,7 +342,7 @@ namespace cv
     }
 
     // Calculate the patches within the search region
-    cv::Size imageSize(image_->width, image_->height);
+    cv::Size imageSize(image_.cols, image_.rows);
     cv::Rect wholeImage = cv::Rect(0,0,imageSize.width,imageSize.height);
     boosting::Patches *trackingPatches;	
     cv::Rect searchRegion = tracker_->getTrackingROI(params.search_factor_);
@@ -368,7 +362,7 @@ namespace cv
     delete trackingPatches;
 
     // Save the new tracking ROI
-    *track_box = tracker_->getTrackedPatch();
+    track_box = tracker_->getTrackedPatch();
     std::cout << "\rTracking confidence = " << tracker_->getConfidence();
 
     // Return success or failure based on whether or not the tracker has been lost
@@ -376,7 +370,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  void SemiOnlineBoostingAlgorithm::import_image(const IplImage* image)
+  void SemiOnlineBoostingAlgorithm::import_image(const cv::Mat & image)
   {
     // We want the internal version of the image to be gray-scale, so let's
     // do that here.  We'll handle cases where the input is either RGB, RGBA,
@@ -385,30 +379,30 @@ namespace cv
     // from every data type since that shouldn't be happening.
 
     // Make sure the input image pointer is valid
-    if (image == NULL)
+    if (image.empty())
     {
       std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
       exit(0);  // <--- CV_ERROR?
     }
 
     // First, make sure our image is allocated
-    if (image_ == NULL)
+    if (image_.empty())
     {
-      image_ = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+      image_.create(image.size(), CV_8U);
     }
 
     // Now copy it in appropriately as a gray-scale, 8-bit image
-    if (image->nChannels == 4)
+    if (image.channels() == 4)
     {
       cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
     }
-    else if (image->nChannels == 3)
+    else if (image.channels() == 3)
     {
       cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
     }
-    else if (image->nChannels == 1)
+    else if (image.channels() == 1)
     {
-      cvCopy(image, image_);
+      image.copyTo(image_);
     }
     else
     {
@@ -443,7 +437,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool OnlineMILAlgorithm::initialize(const IplImage* image, const ObjectTrackerParams& params, 
+  bool OnlineMILAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
     const CvRect& init_bounding_box)
   {
     import_image(image);
@@ -471,22 +465,10 @@ namespace cv
 
     if (video_frame_ == NULL)
     {
-      video_frame_ = new cv::mil::Matrixu(image_->height, image_->width, 1); 
+      video_frame_ = new cv::mil::Matrixu(image_.rows, image_.cols, 1);
     }
 
-#if 1
-    video_frame_->setData((unsigned char*)image_->imageData, 0);
-#else
-    for (int y = 0; y < image_->height; y++)
-    {
-      const unsigned char* pSrc = (unsigned char*)image_->imageData + y*image_->widthStep;
-      unsigned char* pDst = video_frame_->getRow<unsigned char>(y);
-      for (int x = 0; x < image_->width; x++, pSrc++, pDst++)
-      {
-        *pDst = *pSrc;
-      }
-    }
-#endif
+    video_frame_->setData(image_, 0);
     tracker_.init(*video_frame_, tracker_params_, clfparams_);
     
     // Return success
@@ -494,8 +476,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool OnlineMILAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
-    CvRect* track_box)
+  bool OnlineMILAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
+    cv::Rect & track_box)
   {
     if (video_frame_ == NULL)
     {
@@ -504,19 +486,8 @@ namespace cv
     }
 
     import_image(image);
-#if 1
-    video_frame_->setData((unsigned char*)image_->imageData, 0);
-#else
-    for (int y = 0; y < image_->height; y++)
-    {
-      const unsigned char* pSrc = (unsigned char*)image_->imageData + y*image_->widthStep;
-      unsigned char* pDst = video_frame_->getRow<unsigned char>(y);
-      for (int x = 0; x < image_->width; x++, pSrc++, pDst++)
-      {
-        *pDst = *pSrc;
-      }
-    }
-#endif
+
+    video_frame_->setData(image_, 0);
 
     // Update tracker
     tracker_.track_frame(*video_frame_);
@@ -529,7 +500,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  void OnlineMILAlgorithm::import_image(const IplImage* image)
+  void OnlineMILAlgorithm::import_image(const cv::Mat & image)
   {
     // We want the internal version of the image to be gray-scale, so let's
     // do that here.  We'll handle cases where the input is either RGB, RGBA,
@@ -538,30 +509,30 @@ namespace cv
     // from every data type since that shouldn't be happening.
 
     // Make sure the input image pointer is valid
-    if (image == NULL)
+    if (image.empty())
     {
       std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
       exit(0);  // <--- CV_ERROR?
     }
 
     // First, make sure our image is allocated
-    if (image_ == NULL)
+    if (image_.empty())
     {
-      image_ = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+      image_.create(image.size(), CV_8U);
     }
 
     // Now copy it in appropriately as a gray-scale, 8-bit image
-    if (image->nChannels == 4)
+    if (image.channels() == 4)
     {
       cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
     }
-    else if (image->nChannels == 3)
+    else if (image.channels() == 3)
     {
       cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
     }
-    else if (image->nChannels == 1)
+    else if (image.channels() == 1)
     {
-      cvCopy(image, image_);
+      image.copyTo(image_);
     }
     else
     {
@@ -586,7 +557,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool LINEMODAlgorithm::initialize(const IplImage* image, const ObjectTrackerParams& params, 
+  bool LINEMODAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
     const CvRect& init_bounding_box)
   {
     // Return success
@@ -594,15 +565,15 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool LINEMODAlgorithm::update(const IplImage* image, const ObjectTrackerParams& params, 
-    CvRect* track_box)
+  bool LINEMODAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
+    cv::Rect & track_box)
   {
     // Return success
     return true;
   }
 
   //---------------------------------------------------------------------------
-  void LINEMODAlgorithm::import_image(const IplImage* image)
+  void LINEMODAlgorithm::import_image(const cv::Mat & image)
   {
   }
 
@@ -653,7 +624,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool ObjectTracker::initialize(const IplImage* image, const CvRect& bounding_box)
+  bool ObjectTracker::initialize(const cv::Mat & image, const CvRect& bounding_box)
   {
     // Initialize the tracker and if it works, set the flag that we're now initialized
     // to true so that update() can work properly.
@@ -672,7 +643,7 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool ObjectTracker::update(const IplImage* image, CvRect* track_box)
+  bool ObjectTracker::update(const cv::Mat & image, cv::Rect & track_box)
   {
     // First make sure we have already initialized.  Otherwise we can't continue.
     if (!initialized_)

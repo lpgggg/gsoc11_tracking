@@ -532,9 +532,9 @@ namespace cv
 
       bool track(ImageRepresentation* image, Patches* patches);
 
-      Rect getTrackingROI(float searchFactor);
+      cv::Rect getTrackingROI(float searchFactor);
       float getConfidence();
-      Rect getTrackedPatch();
+      cv::Rect getTrackedPatch();
       cv::Point2i getCenter();
       const cv::Mat & getConfImageDisplay() const { return detector->getConfImageDisplay(); }
 

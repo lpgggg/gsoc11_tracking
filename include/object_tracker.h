@@ -89,19 +89,19 @@ namespace cv
     TrackingAlgorithm();
     virtual ~TrackingAlgorithm();
 
-    virtual bool initialize(const IplImage* image, const ObjectTrackerParams& params, 
+    virtual bool initialize(const cv::Mat & image, const ObjectTrackerParams& params,
       const CvRect& init_bounding_box) = 0;
 
-    virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
-      CvRect* track_box) = 0;
+    virtual bool update(const cv::Mat & image, const ObjectTrackerParams& params,
+      cv::Rect & track_box) = 0;
 
   protected:
     // A method to import an image to the type desired for the current algorithm
-    virtual void import_image(const IplImage* image) = 0;
+    virtual void import_image(const cv::Mat & image) = 0;
 
     // A local image holder (can be gray-scale, color, depth image 16-bit, whatever
     // you want...)
-    IplImage* image_;
+    cv::Mat image_;
   };
 
   //
@@ -120,15 +120,15 @@ namespace cv
     OnlineBoostingAlgorithm();
     ~OnlineBoostingAlgorithm();
 
-    virtual bool initialize(const IplImage* image, const ObjectTrackerParams& params, 
+    virtual bool initialize(const cv::Mat & image, const ObjectTrackerParams& params,
       const CvRect& init_bounding_box);
 
-    virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
-      CvRect* track_box);
+    virtual bool update(const cv::Mat & image, const ObjectTrackerParams& params,
+      cv::Rect & track_box);
 
   protected:
     // A method to import an image to the type desired for the current algorithm
-    virtual void import_image(const IplImage* image);
+    virtual void import_image(const cv::Mat & image);
 
   private:
     // The main boosting tracker object
@@ -161,15 +161,15 @@ namespace cv
     SemiOnlineBoostingAlgorithm();
     ~SemiOnlineBoostingAlgorithm();
 
-    virtual bool initialize(const IplImage* image, const ObjectTrackerParams& params, 
+    virtual bool initialize(const cv::Mat & image, const ObjectTrackerParams& params,
       const CvRect& init_bounding_box);
 
-    virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
-      CvRect* track_box);
+    virtual bool update(const cv::Mat & image, const ObjectTrackerParams& params,
+      cv::Rect & track_box);
 
   protected:
     // A method to import an image to the type desired for the current algorithm
-    virtual void import_image(const IplImage* image);
+    virtual void import_image(const cv::Mat & image);
 
   private:
     // The main boosting tracker object
@@ -201,15 +201,15 @@ namespace cv
     OnlineMILAlgorithm();
     ~OnlineMILAlgorithm();
 
-    virtual bool initialize(const IplImage* image, const ObjectTrackerParams& params, 
+    virtual bool initialize(const cv::Mat & image, const ObjectTrackerParams& params,
       const CvRect& init_bounding_box);
 
-    virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
-      CvRect* track_box);
+    virtual bool update(const cv::Mat & image, const ObjectTrackerParams& params,
+      cv::Rect & track_box);
 
   protected:
     // A method to import an image to the type desired for the current algorithm
-    virtual void import_image(const IplImage* image);
+    virtual void import_image(const cv::Mat & image);
 
   private:
     // The main Online MIL tracker
@@ -240,15 +240,15 @@ namespace cv
     LINEMODAlgorithm();
     ~LINEMODAlgorithm();
 
-    virtual bool initialize(const IplImage* image, const ObjectTrackerParams& params, 
+    virtual bool initialize(const cv::Mat & image, const ObjectTrackerParams& params,
       const CvRect& init_bounding_box);
 
-    virtual bool update(const IplImage* image, const ObjectTrackerParams& params, 
-      CvRect* track_box);
+    virtual bool update(const cv::Mat & image, const ObjectTrackerParams& params,
+      cv::Rect & track_box);
 
   protected:
     // A method to import an image to the type desired for the current algorithm
-    virtual void import_image(const IplImage* image);
+    virtual void import_image(const cv::Mat & image);
   };
 
   //
@@ -286,7 +286,7 @@ namespace cv
     //    depth images we'll probably also allow IPL_DEPTH_16S.
     // -- Be sure to do boundary checks on 'boundingBox' to account for user error.
     //
-    virtual bool initialize(const IplImage* image, const CvRect& bounding_box);
+    virtual bool initialize(const cv::Mat & image, const CvRect& bounding_box);
 
     // Update the state of the tracker.  This assumes that initialization has already occurred.
     // If not, false will immediately be returned.  The new tracking bounding box will be 
@@ -304,7 +304,7 @@ namespace cv
     // :TODO:       adr: 05/23/2011
     // -- Do we want to take any other inputs to this function?
     //
-    virtual bool update(const IplImage* image, CvRect* track_box);
+    virtual bool update(const cv::Mat & image, cv::Rect & track_box);
 
     // Store the input parameters internally
     void set_params(const ObjectTrackerParams& params);

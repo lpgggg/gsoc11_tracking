@@ -489,7 +489,7 @@ namespace cv
 			uint		size() const { return _cols*_rows; };
 			int			length() const { return max(_cols,_rows); };
 
-      void setData(const T* inDataPtr, const int channel);
+      void setData(const cv::Mat & image, const int channel);
 			
 			//Matrix<T>& operator= ( const vector<T> &x )
 			//vector<T>	toVec();
@@ -661,15 +661,15 @@ namespace cv
 		}
     
     template<class T>
-    void Matrix<T>::setData(const T* inDataPtr, const int channel)
+    void Matrix<T>::setData(const cv::Mat & image, const int channel)
     {
       if( typeid(T) == typeid(uchar) )
       {
-        ippiCopy_8u_C1R((unsigned char*)inDataPtr, _dataStep, (unsigned char*)_data[channel], _dataStep, _roi);
+        ippiCopy_8u_C1R((unsigned char*)image.data, _dataStep, (unsigned char*)_data[channel], _dataStep, _roi);
       }
       else
       {
-        ippiCopy_32f_C1R((float*)inDataPtr, _dataStep, (float*)_data[channel], _dataStep, _roi);
+        ippiCopy_32f_C1R((float*)image.data, _dataStep, (float*)_data[channel], _dataStep, _roi);
       }
     }
 
@@ -2213,12 +2213,12 @@ namespace cv
 			bool			init(Matrixu frame, SimpleTrackerParams p, ClfStrongParams *clfparams);
 			Matrixf &		getFtrHist() { return _clf->_ftrHist; }; // only works if _clf->_storeFtrHistory is set to true.. mostly for debugging
 			
-			inline void getTrackBox(CvRect* roi)
+			inline void getTrackBox(cv::Rect & roi)
 			{
-				roi->width = cvRound(_curState[2]);
-				roi->height = cvRound(_curState[3]);
-				roi->x = cvRound(_curState[0]);
-				roi->y = cvRound(_curState[1]);
+				roi.width = cvRound(_curState[2]);
+				roi.height = cvRound(_curState[3]);
+				roi.x = cvRound(_curState[0]);
+				roi.y = cvRound(_curState[1]);
 			}
 			
 			
