@@ -417,23 +417,20 @@ namespace cv
 
   //---------------------------------------------------------------------------
   OnlineMILAlgorithm::OnlineMILAlgorithm() 
-    : TrackingAlgorithm()
+    :
+        TrackingAlgorithm(),
+        is_initialized(false)
   {
     cv::mil::randinitalize((int)time(0));
     clfparams_ = new cv::mil::ClfMilBoostParams();
     ftrparams_ = &haarparams_;
     clfparams_->_ftrParams	= ftrparams_;
-    video_frame_ = NULL;
   }
 
   //---------------------------------------------------------------------------
   OnlineMILAlgorithm::~OnlineMILAlgorithm()
   {
     delete clfparams_;
-    if (video_frame_ != NULL)
-    {
-      delete video_frame_;
-    }
   }
 
   //---------------------------------------------------------------------------
@@ -463,15 +460,10 @@ namespace cv
     clfparams_->_ftrParams->_width	= (cv::mil::uint)init_bounding_box.width;
     clfparams_->_ftrParams->_height	= (cv::mil::uint)init_bounding_box.height;
 
-    if (video_frame_ == NULL)
-    {
-      video_frame_ = new cv::mil::Matrixu(image_.rows, image_.cols, 1);
-    }
-
-    video_frame_->setData(image_, 0);
     tracker_.init(image_, tracker_params_, clfparams_);
     
     // Return success
+    is_initialized = true;
     return true;
   }
 
@@ -479,15 +471,13 @@ namespace cv
   bool OnlineMILAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
     cv::Rect & track_box)
   {
-    if (video_frame_ == NULL)
+    if (!is_initialized)
     {
       std::cerr << "OnlineMILAlgorithm::update() -- Error!  Did not intialize algorithm!\n" << std::endl;
       return false;
     }
 
     import_image(image);
-
-    video_frame_->setData(image_, 0);
 
     // Update tracker
     tracker_.track_frame(image_);

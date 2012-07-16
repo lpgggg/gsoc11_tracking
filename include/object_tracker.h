@@ -221,9 +221,8 @@ namespace cv
     cv::mil::FtrParams* ftrparams_;
     cv::mil::HaarFtrParams haarparams_;
 
-    // A copy of the image frame for use with the MIL algorithm
-    cv::mil::Matrixu* video_frame_;
-  };
+    bool is_initialized;
+};
 
   //
   //
