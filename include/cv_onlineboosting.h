@@ -50,19 +50,16 @@ namespace cv
     {
     public:
 
-      ImageRepresentation(unsigned char* image, Size imagSize);
-      ImageRepresentation(unsigned char* image, Size imagSize, Rect imageROI);
-      void defaultInit(unsigned char* image, Size imageSize);
+      ImageRepresentation(const cv::Mat & image, Size imagSize);
+      ImageRepresentation(const cv::Mat & image, Size imagSize, Rect imageROI);
+      void defaultInit(const cv::Mat & image, Size imageSize);
 
       int getSum(Rect imageROI);
       float getMean(Rect imagROI);
       unsigned int getValue(cv::Point2i position);
-      cv::Size getImageSize(void){return m_imageSize;};
-      Rect getImageROI(void){return m_ROI;};
-      void setNewImage(unsigned char* image);
       void setNewROI(Rect ROI);
       void setNewImageSize( Rect ROI );
-      void setNewImageAndROI(unsigned char* image, Rect ROI);
+      void setNewImageAndROI(const cv::Mat & image, Rect ROI);
       float getVariance(Rect imageROI);
       long getSqSum(Rect imageROI);
       bool getUseVariance(){return m_useVariance;};
@@ -72,11 +69,11 @@ namespace cv
     private:
 
       bool m_useVariance;
-      void createIntegralsOfROI(unsigned char* image);
+      void createIntegralsOfROI(const cv::Mat & image);
 
       cv::Size m_imageSize;
       cv::Mat_<int> intImage;
-      cv::Mat_<float> intSqImage;
+      cv::Mat_<double> intSqImage;
       Rect m_ROI;
       cv::Point2i m_offset;
     };

@@ -163,7 +163,7 @@ namespace cv
 
     // (Re-)Initialize the boosting tracker
     cv::Size imageSize(image_->width, image_->height);
-    cur_frame_rep_ = new boosting::ImageRepresentation((unsigned char*)image_->imageData, imageSize);
+    cur_frame_rep_ = new boosting::ImageRepresentation(image_, imageSize);
     cv::Rect wholeImage(0,0,imageSize.width,imageSize.height);
     cv::Rect tracking_rect = init_bounding_box;
     tracking_rect_size_ = cv::Size(tracking_rect.width, tracking_rect.height);
@@ -202,7 +202,7 @@ namespace cv
     cv::Rect searchRegion = tracker_->getTrackingROI(params.search_factor_);
     trackingPatches = new boosting::PatchesRegularScan(searchRegion, wholeImage, tracking_rect_size_, params.overlap_);
 
-    cur_frame_rep_->setNewImageAndROI((unsigned char*)image_->imageData, searchRegion);
+    cur_frame_rep_->setNewImageAndROI(image_, searchRegion);
 
     if (!tracker_->track(cur_frame_rep_, trackingPatches))
     {
@@ -315,7 +315,7 @@ namespace cv
 
     // (Re-)Initialize the boosting tracker
     cv::Size imageSize(image_->width, image_->height);
-    cur_frame_rep_ = new boosting::ImageRepresentation((unsigned char*)image_->imageData, imageSize);
+    cur_frame_rep_ = new boosting::ImageRepresentation(image_, imageSize);
     cv::Rect wholeImage = cv::Rect(0,0,imageSize.width,imageSize.height);
     cv::Rect tracking_rect = init_bounding_box;
     tracking_rect_size_ = cv::Size(tracking_rect.width, tracking_rect.height);
@@ -354,7 +354,7 @@ namespace cv
     cv::Rect searchRegion = tracker_->getTrackingROI(params.search_factor_);
     trackingPatches = new boosting::PatchesRegularScan(searchRegion, wholeImage, tracking_rect_size_, params.overlap_);
 
-    cur_frame_rep_->setNewImageAndROI((unsigned char*)image_->imageData, searchRegion);
+    cur_frame_rep_->setNewImageAndROI(image_, searchRegion);
 
     if (!tracker_->track(cur_frame_rep_, trackingPatches))
     {

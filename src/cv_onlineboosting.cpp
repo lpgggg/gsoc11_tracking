@@ -87,14 +87,14 @@ namespace cv
       return isDet;
     }
 
-    ImageRepresentation::ImageRepresentation(unsigned char* image, Size imageSize)
+    ImageRepresentation::ImageRepresentation(const cv::Mat & image, Size imageSize)
     {  
       // call the default initialization
       this->defaultInit(image, imageSize);
       return;
     }
 
-    ImageRepresentation::ImageRepresentation(unsigned char* image, Size imageSize, Rect imageROI)
+    ImageRepresentation::ImageRepresentation(const cv::Mat & image, Size imageSize, Rect imageROI)
     {
       this->m_imageSize = imageSize;
 
@@ -103,12 +103,12 @@ namespace cv
 
       m_useVariance = false;
 
-      if (image!= NULL)
+      if (!image.empty())
         this->createIntegralsOfROI(image);
     }
 
 
-    void ImageRepresentation::defaultInit(unsigned char* image, Size imageSize)
+    void ImageRepresentation::defaultInit(const cv::Mat & image, Size imageSize)
     {  
       this->m_imageSize = imageSize;
 
@@ -120,15 +120,10 @@ namespace cv
       m_ROI.x = 0;
       m_offset = cv::Point2i(m_ROI.x, m_ROI.y);
 
-      if (image != NULL)
+      if (!image.empty())
         this->createIntegralsOfROI(image);
 
       return;
-    }
-
-    void ImageRepresentation::setNewImage(unsigned char* image)
-    {
-      createIntegralsOfROI(image);
     }
 
     void ImageRepresentation::setNewROI(Rect ROI)
@@ -144,7 +139,7 @@ namespace cv
     }
 
 
-    void ImageRepresentation::setNewImageAndROI(unsigned char* image, Rect ROI)
+    void ImageRepresentation::setNewImageAndROI(const cv::Mat & image, Rect ROI)
     {
       this->setNewROI(ROI);
       this->createIntegralsOfROI(image);
@@ -227,52 +222,9 @@ namespace cv
       return getSum(imageROI)/static_cast<float>(Width*Height);
     }
 
-    void ImageRepresentation::createIntegralsOfROI(unsigned char* image)
+    void ImageRepresentation::createIntegralsOfROI(const cv::Mat & image)
     {
-      unsigned long ROIlength = (m_ROI.width+1)*(m_ROI.height+1);
-      int columnidx, rowidx;
-      unsigned long curPointer;
-      unsigned long dptr;
-
-
-      curPointer = 0;
-      dptr = 0;
-
-      intImage = cv::Mat_<int>::zeros(m_ROI.height+1, m_ROI.width+1);
-      intSqImage = cv::Mat_<float>::zeros(m_ROI.height+1, m_ROI.width+1);
-
-      // current sum
-      unsigned int value_tmp = 0;
-      unsigned int value_tmpSq = 0;
-
-      for (rowidx = 0; rowidx<m_ROI.height; rowidx++)
-      {
-        // current Image Position
-        curPointer = (rowidx+m_ROI.y)*m_imageSize.width+m_ROI.x;
-
-        // current Integral Image Position
-        dptr = (m_ROI.width+1)*(rowidx+1) + 1;
-
-        value_tmp = 0;
-        value_tmpSq = 0;
-
-        for (columnidx = 0; columnidx<m_ROI.width; columnidx++)
-        {
-          // cumulative row sum
-          value_tmp += image[curPointer];
-          value_tmpSq += image[curPointer]*image[curPointer];
-
-          // update Integral Image
-          intImage(dptr) = intImage( dptr - (m_ROI.width+1) ) + value_tmp;
-          intSqImage(dptr) = intSqImage( dptr - (m_ROI.width+1) ) + value_tmpSq;
-
-          dptr++;
-          curPointer++;
-        }
-
-      }
-
-      return;
+      cv::integral(image(m_ROI),intImage,intSqImage, CV_32S);
     }
 
     Patches::Patches(void)
