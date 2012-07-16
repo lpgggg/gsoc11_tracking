@@ -88,11 +88,11 @@ int main(int argc, char** argv)
     CvScalar box_color;
     if (tracker_failed)
     {
-      box_color = CV_RGB(255,0,0);
+      box_color = cv::Scalar(255,0,0);
     }
     else
     {
-      box_color = CV_RGB(255,255,0);
+      box_color = cv::Scalar(255,255,0);
     }
     cv::rectangle(image, cvPoint(theTrack.x,theTrack.y),
       cvPoint(theTrack.x+theTrack.width-1,theTrack.y+theTrack.height-1), box_color, 2);

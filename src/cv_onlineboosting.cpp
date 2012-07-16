@@ -88,6 +88,8 @@ namespace cv
     }
 
     ImageRepresentation::ImageRepresentation(const cv::Mat & image, Size imageSize)
+        :
+          m_useVariance(false)
     {  
       // call the default initialization
       this->defaultInit(image, imageSize);
@@ -95,13 +97,14 @@ namespace cv
     }
 
     ImageRepresentation::ImageRepresentation(const cv::Mat & image, Size imageSize, Rect imageROI)
+        :
+          m_useVariance(false)
     {
       this->m_imageSize = imageSize;
 
       m_ROI = imageROI;
       m_offset = cv::Point2i(m_ROI.x, m_ROI.y);
 
-      m_useVariance = false;
 
       if (!image.empty())
         this->createIntegralsOfROI(image);
@@ -228,6 +231,9 @@ namespace cv
     }
 
     Patches::Patches(void)
+        :
+          numPatchesX(0),
+          numPatchesY(0)
     {
       this->num = 1;
       ROI.height = 0;
@@ -237,6 +243,9 @@ namespace cv
     }
 
     Patches::Patches(int num)
+        :
+          numPatchesX(0),
+          numPatchesY(0)
     {
       this->num = num;
       patches.resize(num);
@@ -1467,11 +1476,10 @@ namespace cv
       m_wCorrect[sourceIndex] = 1.0f;
     }
 
-    StrongClassifier::StrongClassifier(int numBaseClassifier, 
-      int numWeakClassifier, 
-      Size patchSize, 
-      bool useFeatureExchange, 
-      int iterationInit)
+    StrongClassifier::StrongClassifier(int numBaseClassifier, int numWeakClassifier, Size patchSize,
+                                       bool useFeatureExchange, int iterationInit)
+        :
+          baseClassifier(0)
     {
       this->numBaseClassifier = numBaseClassifier;
       this->numAllWeakClassifier = numWeakClassifier+iterationInit;
@@ -1786,6 +1794,8 @@ namespace cv
 
 
     Detector::Detector(StrongClassifier* classifier)
+        :
+          m_sizeDetections(0)
     {
       this->m_classifier = classifier;
 

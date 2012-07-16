@@ -57,7 +57,7 @@ namespace cv
   //
   // :TODO: to be filled-in as needed...
   //
-  struct CV_EXPORTS ObjectTrackerParams
+  CV_EXPORTS struct ObjectTrackerParams
   {
     enum { CV_ONLINEBOOSTING=100, CV_SEMIONLINEBOOSTING, CV_ONLINEMIL, CV_LINEMOD };
 
@@ -83,7 +83,7 @@ namespace cv
 
   // The base (abstract) tracking algorithm class, to define the interface
   // for all other specific object tracking algorithm classes.
-  class CV_EXPORTS TrackingAlgorithm
+  CV_EXPORTS class TrackingAlgorithm
   {
   public:
     TrackingAlgorithm();
@@ -114,7 +114,7 @@ namespace cv
   // H. Grabner, M. Grabner, and H. Bischof.  "Real-time Tracking via On-line Boosting", 
   // In Proceedings British Machine Vision Conference (BMVC), volume 1, pages 47-56, 2006.
   //
-  class CV_EXPORTS OnlineBoostingAlgorithm : public TrackingAlgorithm
+  CV_EXPORTS class OnlineBoostingAlgorithm: public TrackingAlgorithm
   {
   public:
     OnlineBoostingAlgorithm();
@@ -155,7 +155,7 @@ namespace cv
   // Robust Tracking", In Proceedings European Conference on Computer Vision (ECCV), 
   // 2008.
   //
-  class CV_EXPORTS SemiOnlineBoostingAlgorithm : public TrackingAlgorithm
+  CV_EXPORTS class SemiOnlineBoostingAlgorithm: public TrackingAlgorithm
   {
   public:
     SemiOnlineBoostingAlgorithm();
@@ -195,7 +195,7 @@ namespace cv
   // B. Babenko, M.H. Yang, and S. Belongie.  "Visual Tracking with Online Multiple 
   // Instance Learning", CVPR 2009, Miami, Florida.
   //
-  class CV_EXPORTS OnlineMILAlgorithm : public TrackingAlgorithm
+  CV_EXPORTS class OnlineMILAlgorithm: public TrackingAlgorithm
   {
   public:
     OnlineMILAlgorithm();
@@ -233,7 +233,7 @@ namespace cv
   //
   // ... fill-in when paper is accepted and we have permission ...
   //
-  class CV_EXPORTS LINEMODAlgorithm : public TrackingAlgorithm
+  CV_EXPORTS class LINEMODAlgorithm: public TrackingAlgorithm
   {
   public:
     LINEMODAlgorithm();
@@ -260,7 +260,7 @@ namespace cv
   // tracking algorithm to implement, based on the 'algorithm' field
   // in the ObjectTrackerParams.
   //
-  class CV_EXPORTS ObjectTracker
+  CV_EXPORTS class ObjectTracker
   {
   public:
     // Default constructor--performs initializations of the class and memory.

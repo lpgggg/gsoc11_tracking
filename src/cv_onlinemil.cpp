@@ -85,52 +85,9 @@ namespace cv
 		
 		
     void
-    drawRect(cv::Mat & img, float width, float height, float x, float y, float sc, float th, int lineWidth, int R,
-             int G, int B)
-    {
-
-      sc = 1.0f/sc;
-      th = -th;
-
-      double cth = cos(th)*sc;
-      double sth = sin(th)*sc;
-
-      CvPoint p1, p2, p3, p4;
-
-      p1.x = (int)(-cth*width/2 + sth*height/2 + width/2 + x);
-      p1.y = (int)(-sth*width/2 - cth*height/2 + height/2 + y);
-
-      p2.x = (int)(cth*width/2 + sth*height/2 + width/2 + x);
-      p2.y = (int)(sth*width/2 - cth*height/2 + height/2 + y);
-
-      p3.x = (int)(cth*width/2 - sth*height/2 + width/2 + x);
-      p3.y = (int)(sth*width/2 + cth*height/2 + height/2 + y);
-
-      p4.x = (int)(-cth*width/2 - sth*height/2 + width/2 + x);
-      p4.y = (int)(-sth*width/2 + cth*height/2 + height/2 + y);
-
-      //cout << p1.x << " " << p1.y << endl;
-      //cout << p2.x << " " << p2.y << endl;
-      //cout << p3.x << " " << p3.y << endl;
-      //cout << p4.x << " " << p4.y << endl;
-
-      cv::line(img, p1, p2, CV_RGB( R, G, B), lineWidth, CV_AA );
-      cv::line(img, p2, p3, CV_RGB( R, G, B), lineWidth, CV_AA );
-      cv::line(img, p3, p4, CV_RGB( R, G, B), lineWidth, CV_AA );
-      cv::line(img, p4, p1, CV_RGB( R, G, B), lineWidth, CV_AA );
-    }
-
-    void
-    drawText(cv::Mat & img, const char* txt, float x, float y, int R, int G, int B)
-    {
-      CvPoint p = cvPoint((int) x, (int) y);
-      cv::putText(img, txt, p, CV_FONT_HERSHEY_SIMPLEX, 1.0, CV_RGB(R, G, B));
-    }
-
-    void
     display(const cv::Mat & img, int fignum, float p)
     {
-      assert(size() > 0);
+      CV_Assert(!img.empty());
       char name[1024];
       sprintf(name, "Figure %d", fignum);
       cvNamedWindow(name, 0/*CV_WINDOW_AUTOSIZE*/);
@@ -228,7 +185,9 @@ namespace cv
 		
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
-		HaarFtr::HaarFtr()
+    HaarFtr::HaarFtr()
+        :
+          _maxSum(0)
 		{
 			_width = 0;
 			_height = 0;
@@ -278,12 +237,12 @@ namespace cv
         if (_weights[k] < 0)
           cv::rectangle(v, cv::Point2i(_rects[k].x, _rects[k].y),
                         cv::Point2i(_rects[k].x + _rects[k].width, _rects[k].y + _rects[k].height),
-                        CV_RGB((255 * std::max<double>(-1 * _weights[k], 0.5)), 0, 0), 1);
+                        cv::Scalar((255 * std::max<double>(-1 * _weights[k], 0.5)), 0, 0), 1);
         else
-          cv::rectangle(v, cv::Point2i(_rects[k].x, _rects[k].y),
-                        cv::Point2i(_rects[k].x + _rects[k].width, _rects[k].y + _rects[k].height),
-                        CV_RGB(0, 255 * std::max<double>(_weights[k], 0.5), 255 * std::max<double>(_weights[k], 0.5)),
-                        1);
+          cv::rectangle(
+              v, cv::Point2i(_rects[k].x, _rects[k].y),
+              cv::Point2i(_rects[k].x + _rects[k].width, _rects[k].y + _rects[k].height),
+              cv::Scalar(0, 255 * std::max<double>(_weights[k], 0.5), 255 * std::max<double>(_weights[k], 0.5)), 1);
       }
 
       return v;
@@ -703,7 +662,7 @@ namespace cv
 		}
 
     bool
-    SimpleTracker::init(const cv::Mat & frame, SimpleTrackerParams p, ClfStrongParams *clfparams)
+    SimpleTracker::init(const cv::Mat & frame, const SimpleTrackerParams p, ClfStrongParams *clfparams)
     {
       static cv::Mat img;
 
@@ -802,7 +761,7 @@ namespace cv
 		cv::CascadeClassifier Tracker::facecascade = cv::CascadeClassifier();
 
     bool
-    Tracker::initFace(TrackerParams* params, const cv::Mat &frame)
+    Tracker::initFace(TrackerParams & params, const cv::Mat &frame)
 		{
 			const char* cascade_name = "haarcascade_frontalface_alt_tree.xml";
 			const int minsz = 20;
@@ -832,12 +791,11 @@ namespace cv
 
 			//fprintf(stderr,"x=%f y=%f xmax=%f ymax=%f imgw=%f imgh=%f\n",(float)r->x,(float)r->y,(float)r->x+r->width,(float)r->y+r->height,(float)frame.cols(),(float)frame.rows());
 			
-			params->_initstate.resize(4);
-			params->_initstate[0]	= (float)r.x;// - r->width;
-			params->_initstate[1]	= (float)r.y;// - r->height;
-			params->_initstate[2]	= (float)r.width;
-			params->_initstate[3]	= (float)r.height+10;
-			
+			params._initstate.resize(4);
+      params._initstate[0] = (float) r.x; // - r->width;
+      params._initstate[1] = (float) r.y; // - r->height;
+      params._initstate[2] = (float) r.width;
+      params._initstate[3] = (float) r.height + 10;
 			
 			return true;
 		}

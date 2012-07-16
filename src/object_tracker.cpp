@@ -111,8 +111,12 @@ namespace cv
   //
 
   //---------------------------------------------------------------------------
-  OnlineBoostingAlgorithm::OnlineBoostingAlgorithm() 
-    : TrackingAlgorithm(), tracker_(NULL), cur_frame_rep_(NULL)
+  OnlineBoostingAlgorithm::OnlineBoostingAlgorithm()
+      :
+        TrackingAlgorithm(),
+        tracker_(NULL),
+        cur_frame_rep_(NULL),
+        tracker_lost_(false)
   {
   }
 
@@ -233,20 +237,14 @@ namespace cv
       exit(0);  // <--- CV_ERROR?
     }
 
-    // First, make sure our image is allocated
-    if (image_.empty())
-    {
-      image_.create(image.size(), CV_8U);
-    }
-
     // Now copy it in appropriately as a gray-scale, 8-bit image
     if (image.channels() == 4)
     {
-      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
+      cv::cvtColor(image, image_, CV_RGBA2GRAY);
     }
     else if (image.channels() == 3)
     {
-      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
+      cv::cvtColor(image, image_, CV_RGB2GRAY);
     }
     else if (image.channels() == 1)
     {
@@ -263,8 +261,12 @@ namespace cv
   //
 
   //---------------------------------------------------------------------------
-  SemiOnlineBoostingAlgorithm::SemiOnlineBoostingAlgorithm() 
-    : TrackingAlgorithm(), tracker_(NULL), cur_frame_rep_(NULL)
+  SemiOnlineBoostingAlgorithm::SemiOnlineBoostingAlgorithm()
+      :
+        TrackingAlgorithm(),
+        tracker_(0),
+        cur_frame_rep_(0),
+        tracker_lost_(false)
   {
   }
 
@@ -385,20 +387,14 @@ namespace cv
       exit(0);  // <--- CV_ERROR?
     }
 
-    // First, make sure our image is allocated
-    if (image_.empty())
-    {
-      image_.create(image.size(), CV_8U);
-    }
-
     // Now copy it in appropriately as a gray-scale, 8-bit image
     if (image.channels() == 4)
     {
-      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
+      cv::cvtColor(image, image_, CV_RGBA2GRAY);
     }
     else if (image.channels() == 3)
     {
-      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
+      cv::cvtColor(image, image_, CV_RGB2GRAY);
     }
     else if (image.channels() == 1)
     {
@@ -505,20 +501,14 @@ namespace cv
       exit(0);  // <--- CV_ERROR?
     }
 
-    // First, make sure our image is allocated
-    if (image_.empty())
-    {
-      image_.create(image.size(), CV_8U);
-    }
-
     // Now copy it in appropriately as a gray-scale, 8-bit image
     if (image.channels() == 4)
     {
-      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGBA2GRAY);
+      cv::cvtColor(image, image_, CV_RGBA2GRAY);
     }
     else if (image.channels() == 3)
     {
-      cv::cvtColor(cv::Mat(image), cv::Mat(image_), CV_RGB2GRAY);
+      cv::cvtColor(image, image_, CV_RGB2GRAY);
     }
     else if (image.channels() == 1)
     {

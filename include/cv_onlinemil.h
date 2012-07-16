@@ -40,8 +40,9 @@
 #ifndef __OPENCV_ONLINE_MIL_H__
 #define __OPENCV_ONLINE_MIL_H__
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <limits>
 #include <vector>
 
 #include <opencv2/core/core.hpp>
@@ -101,7 +102,11 @@ namespace cv
 		{
 		public:
 			T _val; int _ind;
-			SortableElement() {};
+      SortableElement()
+          :
+            _ind(0)
+      {
+      }
 			SortableElement( T val, int ind ) { _val=val; _ind=ind; }
 			bool operator< ( SortableElement &b ) { return (_val > b._val ); };
 		};
@@ -110,7 +115,11 @@ namespace cv
 		{
 		public:
 			T _val; int _ind;
-			SortableElementRev() {};
+      SortableElementRev()
+          :
+            _ind(0)
+      {
+      }
 			SortableElementRev( T val, int ind ) { _val=val; _ind=ind; }
 			bool operator< ( SortableElementRev<T> &b ) { return (_val < b._val ); };
 		};
@@ -159,7 +168,7 @@ namespace cv
 #else
 			//return (uint)(max_element(v.begin(),v.end())._Ptr-v.begin()._Ptr);
 #endif
-			const T* findPtr = &(*max_element(v.begin(),v.end()));
+			const T* findPtr = &(*std::max_element(v.begin(),v.end()));
 			const T* beginPtr = &(*v.begin());
 			return (uint)(findPtr-beginPtr);
 		}
@@ -290,6 +299,10 @@ namespace cv
 			
 		public:
 			virtual int			ftrType()=0;
+      virtual
+      ~FtrParams()
+      {
+      }
 		};
 		
 		class HaarFtrParams : public FtrParams
@@ -310,7 +323,9 @@ namespace cv
 		{
 		public:
 			uint					_width, _height;
-			
+      virtual ~Ftr()
+      {
+      }
 			virtual float			compute( const Sample &sample ) const =0;
 			virtual void			generate( FtrParams *params ) = 0;
       virtual cv::Mat
@@ -426,11 +441,22 @@ namespace cv
 		class ClfStrongParams
 		{
 		public:
-			ClfStrongParams(){_weakLearner = "stump"; _lRate=0.85f; _storeFtrHistory=false;};
+      ClfStrongParams()
+          :
+            _ftrParams(0),
+            _weakLearner("stump"),
+            _lRate(0.85f),
+            _storeFtrHistory(false)
+      {
+      }
+      virtual
+      ~ClfStrongParams()
+      {
+      }
 			virtual int			clfType()=0; // [0] Online AdaBoost (Oza/Grabner) [1] Online StochBoost_LR [2] Online StochBoost_MIL
 		public:
 			FtrParams			*_ftrParams;
-			string				_weakLearner; // "stump" or "wstump"; current code only uses "stump"
+			std::string				_weakLearner; // "stump" or "wstump"; current code only uses "stump"
 			float				_lRate; // learning rate for weak learners;
 			bool				_storeFtrHistory;
 		};
@@ -447,6 +473,10 @@ namespace cv
 			uint				_counter;
 			
 		public:
+      virtual
+      ~ClfStrong()
+      {
+      }
 			int					nFtrs() {return _ftrs.size();};
 			
 			// abstract functions
@@ -502,7 +532,13 @@ namespace cv
 			std::vector<vectorf>		_countFPv, _countFNv, _countTPv, _countTNv; //[selector][feature]
 			ClfAdaBoostParams	*_myParams;
 		public:
-			ClfAdaBoost(){};
+      ClfAdaBoost()
+          :
+            _sumAlph(0),
+            _myParams(0),
+            _numsamples(0)
+      {
+      }
 			virtual void		init(ClfStrongParams *params);
 			virtual void		update(SampleSet &posx, SampleSet &negx);
 			virtual vectorf		classify(SampleSet &x, bool logR=true);
@@ -518,7 +554,12 @@ namespace cv
 			ClfMilBoostParams	*_myParams;
 			
 		public:
-			ClfMilBoost(){};
+      ClfMilBoost()
+          :
+            _numsamples(0),
+            _myParams(0)
+      {
+      }
 			virtual void		init(ClfStrongParams *params);
 			virtual void		update(SampleSet &posx, SampleSet &negx);
 			virtual vectorf		classify(SampleSet &x, bool logR=true);
@@ -534,6 +575,10 @@ namespace cv
 		public:
 			ClfWeak();
 			ClfWeak(int id);
+      virtual
+      ~ClfWeak()
+      {
+      }
 			
 			virtual void		init()=0;
       virtual void
@@ -661,8 +706,8 @@ namespace cv
 				_n1 = 1.0f/pow(_sig1,0.5f);
 				//_e1 = -1.0f/(2.0f*_sig1+1e-99f);
 				//_e0 = -1.0f/(2.0f*_sig0+1e-99f);
-				_e1 = -1.0f/(2.0f*_sig1+FLT_MIN);
-				_e0 = -1.0f/(2.0f*_sig0+FLT_MIN);
+        _e1 = -1.0f / (2.0f * _sig1 + std::numeric_limits<float>::min());
+        _e0 = -1.0f / (2.0f * _sig0 + std::numeric_limits<float>::min());
 
 			}
 			else{
@@ -687,8 +732,8 @@ namespace cv
 				_n1 = 1.0f/pow(_sig1,0.5f);
 				//_e1 = -1.0f/(2.0f*_sig1+1e-99f);
 				//_e0 = -1.0f/(2.0f*_sig0+1e-99f);				
-				_e1 = -1.0f/(2.0f*_sig1+FLT_MIN);
-				_e0 = -1.0f/(2.0f*_sig0+FLT_MIN);
+        _e1 = -1.0f / (2.0f * _sig1 + std::numeric_limits<float>::min());
+        _e0 = -1.0f / (2.0f * _sig0 + std::numeric_limits<float>::min());
 			}
 		}
 		
@@ -919,8 +964,8 @@ namespace cv
 			bool			_initWithFace;					// initialize with the OpenCV tracker rather than _initstate
 			bool			_disp;							// display video with tracker state (colored box)
 			
-			string			_vidsave;						// filename - save video with tracking box
-			string			_trsave;						// filename - save file containing the coordinates of the box (txt file with [x y width height] per row)
+			std::string _vidsave; // filename - save video with tracking box
+      std::string _trsave; // filename - save file containing the coordinates of the box (txt file with [x y width height] per row)
 			
 		};
 		
@@ -942,7 +987,7 @@ namespace cv
 		{
 		public:
       static bool
-      initFace(TrackerParams* params, const cv::Mat & frame);
+      initFace(TrackerParams & params, const cv::Mat & frame);
 			
 		protected:
 			static cv::CascadeClassifier facecascade;
@@ -954,8 +999,14 @@ namespace cv
 		class SimpleTracker : public Tracker
 		{
 		public:
-			SimpleTracker(){};
-			~SimpleTracker(){ if( _clf!=NULL ) delete _clf; };
+      SimpleTracker()
+          :
+            _cnt(0)
+      {
+      }
+      ~SimpleTracker()
+      {
+      }
       double
       track_frame(const cv::Mat & frame); // track object in a frame;  requires init() to have been called.
       bool
@@ -976,10 +1027,10 @@ namespace cv
 			
 			
 		private:
-			ClfStrong			*_clf;
+      cv::Ptr<ClfStrong> _clf;
 			vectorf				_curState;
 			SimpleTrackerParams	_trparams;
-			ClfStrongParams		*_clfparams;
+      cv::Ptr<ClfStrongParams> _clfparams;
 			int					_cnt;
 		};
 		
