@@ -43,6 +43,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <math.h>
 #include <vector>
 
 #include <opencv2/core/core.hpp>
@@ -74,24 +75,6 @@ namespace cv
 		inline float		sigmoid(float x)
 		{
 			return 1.0f/(1.0f+exp(-x));
-		}
-		inline double		sigmoid(double x)
-		{
-			return 1.0/(1.0+exp(-x));
-		}
-		
-		inline vectorf		sigmoid(vectorf x)
-		{
-			vectorf r(x.size());
-			for( uint k=0; k<r.size(); k++ )
-				r[k] = sigmoid(x[k]);
-			return r;
-			
-		}
-		
-		inline int			force_between(int i, int min, int max)
-		{
-			return std::min<int>(std::max<int>(i,min),max);
 		}
 		
 		std::string
@@ -615,7 +598,7 @@ namespace cv
 			float				_mu0, _mu1, _sig0, _sig1;
 			float				_q;
 			int					_s;
-			float				_n1, _n0;
+      float _log_n1, _log_n0;
 			float				_e1, _e0;
 		public:
 			//////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -640,7 +623,7 @@ namespace cv
 			float				_mu0, _mu1, _sig0, _sig1;
 			float				_q;
 			int					_s;
-			float				_n1, _n0;
+      float _log_n1, _log_n0;
 			float				_e1, _e0;
 		public:
 			//////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -702,8 +685,8 @@ namespace cv
 				
 				_q = (_mu1-_mu0)/2;
 				_s = sign(_mu1-_mu0);
-				_n0 = 1.0f/pow(_sig0,0.5f);
-				_n1 = 1.0f/pow(_sig1,0.5f);
+        _log_n0 = std::log(float(1.0f / pow(_sig0, 0.5f)));
+        _log_n1 = std::log(float(1.0f / pow(_sig1, 0.5f)));
 				//_e1 = -1.0f/(2.0f*_sig1+1e-99f);
 				//_e0 = -1.0f/(2.0f*_sig0+1e-99f);
         _e1 = -1.0f / (2.0f * _sig1 + std::numeric_limits<float>::min());
@@ -728,8 +711,8 @@ namespace cv
 				
 				_q = (_mu1-_mu0)/2;
 				_s = sign(_mu1-_mu0);
-				_n0 = 1.0f/pow(_sig0,0.5f);
-				_n1 = 1.0f/pow(_sig1,0.5f);
+        _log_n0 = std::log(float(1.0f / pow(_sig0, 0.5f)));
+        _log_n1 = std::log(float(1.0f / pow(_sig1, 0.5f)));
 				//_e1 = -1.0f/(2.0f*_sig1+1e-99f);
 				//_e0 = -1.0f/(2.0f*_sig0+1e-99f);				
         _e1 = -1.0f / (2.0f * _sig1 + std::numeric_limits<float>::min());
@@ -740,23 +723,16 @@ namespace cv
 		inline bool				ClfOnlineStump::classify(SampleSet &x, int i)
 		{
 			float xx = getFtrVal(x,i);
-			double p0 = exp( (xx-_mu0)*(xx-_mu0)*_e0 )*_n0;
-			double p1 = exp( (xx-_mu1)*(xx-_mu1)*_e1 )*_n1;
-			bool r = p1>p0;
-			return r;
-			
-			//return (_s*sign(x-_q))>0? 1 : 0 ;
-		}
+      double log_p0 = (xx - _mu0) * (xx - _mu0) * _e0 + _log_n0;
+      double log_p1 = (xx - _mu1) * (xx - _mu1) * _e1 + _log_n1;
+      return log_p1 > log_p0;
+    }
 		inline float			ClfOnlineStump::classifyF(SampleSet &x, int i)
 		{
 			float xx = getFtrVal(x,i);
-			double p0 = exp( (xx-_mu0)*(xx-_mu0)*_e0 )*_n0;
-			double p1 = exp( (xx-_mu1)*(xx-_mu1)*_e1 )*_n1;
-			float r = (float)(log(1e-5+p1)-log(1e-5+p0));
-			//r = (float)p1>p0;
-			return r;
-			
-			//return (_s*sign(x-_q))>0? 1 : 0 ;
+      double log_p0 = (xx - _mu0) * (xx - _mu0) * _e0 + _log_n0;
+      double log_p1 = (xx - _mu1) * (xx - _mu1) * _e1 + _log_n1;
+      return float(log_p1 - log_p0);
 		}
 		inline void				ClfOnlineStump::copy(const ClfWeak* c)
 		{
@@ -768,8 +744,8 @@ namespace cv
 			_lRate	= cc->_lRate;
 			_e0		= cc->_e0;
 			_e1		= cc->_e1;
-			_n0		= cc->_n0;
-			_n1		= cc->_n1;
+			_log_n0		= cc->_log_n0;
+			_log_n1		= cc->_log_n1;
 			
 			return;
 		}
@@ -824,21 +800,19 @@ namespace cv
         }
       }
 			
-			_n0 = 1.0f/pow(_sig0,0.5f);
-			_n1 = 1.0f/pow(_sig1,0.5f);
+			_log_n0 = std::log(float(1.0f / pow(_sig0, 0.5f)));
+      _log_n1 = std::log(float(1.0f / pow(_sig1, 0.5f)));
 			_e1 = -1.0f/(2.0f*_sig1);
 			_e0 = -1.0f/(2.0f*_sig0);
 		}
 		
 		inline float			ClfWStump::classifyF(SampleSet &x, int i)
 		{
-			float xx = getFtrVal(x,i);
-			double p0 = exp( (xx-_mu0)*(xx-_mu0)*_e0 )*_n0;
-			double p1 = exp( (xx-_mu1)*(xx-_mu1)*_e1 )*_n1;
-			float r = (float)(log(1e-5+p1)-log(1e-5+p0));
-			//r = (float)(r>0);
-			return r;
-		}
+      float xx = getFtrVal(x, i);
+      double log_p0 = (xx - _mu0) * (xx - _mu0) * _e0 + _log_n0;
+      double log_p1 = (xx - _mu1) * (xx - _mu1) * _e1 + _log_n1;
+      return (float) (log_p1 - log_p0);
+    }
 		inline void				ClfWStump::copy(const ClfWeak* c)
 		{
 			ClfWStump *cc = (ClfWStump*)c;
