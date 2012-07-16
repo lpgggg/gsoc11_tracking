@@ -37,9 +37,10 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
-#include "object_tracker.h"
+
 #include <iostream>
-#include <cstdlib>
+
+#include "object_tracker.h"
 
 namespace cv
 {

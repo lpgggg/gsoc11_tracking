@@ -40,7 +40,8 @@
 #ifndef __OPENCV_OBJECT_TRACKER_H__
 #define __OPENCV_OBJECT_TRACKER_H__
 
-#include <cv.h>
+#include <opencv2/core/core.hpp>
+
 #include "cv_onlineboosting.h"
 #include "cv_onlinemil.h"
 //#include "cv_linemod.h"

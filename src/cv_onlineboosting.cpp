@@ -30,33 +30,14 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
-#include "cv_onlineboosting.h"
 
-// B/c windows has to redefine min and max for some reason (different
-// from std::)
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
-
-#include <algorithm>
-#include <math.h>
 #include <iostream>
 
-#ifndef M_PI
-#define M_PI (3.14159265358979323846)
-#endif
+#include <opencv2/imgproc/imgproc.hpp>
 
-#include <float.h>
-//#define FLOAT_MAX 3.4e38f
-//#define FLOAT_MIN 1.2e-38f
+#include "cv_onlineboosting.h"
+
 #define sign(x) (((x)>=0)? 1.0f : -1.0f)
-
-#include <stdio.h>
-
-#include <cv.h>
 
 /****************************************************************************************\
 COPYRIGHT NOTICE
@@ -154,8 +135,8 @@ namespace cv
 
       intImage = NULL;
       intSqImage = NULL;
-      intImage = new __uint32[(m_ROI.width+1)*(m_ROI.height+1)];
-      intSqImage = new __uint64[(m_ROI.width+1)*(m_ROI.height+1)];
+      intImage = new unsigned int[(m_ROI.width+1)*(m_ROI.height+1)];
+      intSqImage = new long unsigned int[(m_ROI.width+1)*(m_ROI.height+1)];
 
       if (image!= NULL)
         this->createIntegralsOfROI(image);
@@ -178,8 +159,8 @@ namespace cv
       intSqImage = NULL;
 
 
-      intImage = new __uint32[(m_ROI.width+1)*(m_ROI.height+1)];
-      intSqImage = new __uint64[(m_ROI.width+1)*(m_ROI.height+1)];
+      intImage = new unsigned int[(m_ROI.width+1)*(m_ROI.height+1)];
+      intSqImage = new long unsigned int[(m_ROI.width+1)*(m_ROI.height+1)];
 
       if (image != NULL)
         this->createIntegralsOfROI(image);
@@ -205,8 +186,8 @@ namespace cv
       {	
         delete[] intImage;
         delete[] intSqImage;
-        intImage = new __uint32[(ROI.width+1)*(ROI.height+1)];
-        intSqImage = new __uint64[(ROI.width+1)*(ROI.height+1)];
+        intImage = new unsigned int[(ROI.width+1)*(ROI.height+1)];
+        intSqImage = new long unsigned int[(ROI.width+1)*(ROI.height+1)];
       }
       this->m_ROI = ROI;
       m_offset = cv::Point2i(ROI.x, ROI.y);
@@ -225,7 +206,7 @@ namespace cv
       this->createIntegralsOfROI(image);
     }
 
-    __uint32 ImageRepresentation::getValue(cv::Point2i imagePosition)
+    unsigned int ImageRepresentation::getValue(cv::Point2i imagePosition)
     {
       cv::Point2i position = imagePosition-m_offset;
       return intImage[position.y*(this->m_ROI.width+1)+position.x];
@@ -237,7 +218,7 @@ namespace cv
       int OriginX = imageROI.x-m_offset.x;
       int OriginY = imageROI.y-m_offset.y;
 
-      __uint64 *OriginPtr = &intSqImage[OriginY * (m_ROI.width+1) + OriginX];
+      long unsigned int *OriginPtr = &intSqImage[OriginY * (m_ROI.width+1) + OriginX];
 
       // Check and fix width and height
       int Width  = imageROI.width;
@@ -249,7 +230,7 @@ namespace cv
       unsigned long down  = Height * (m_ROI.width+1);
       unsigned long right = Width;
 
-      __int64 value = OriginPtr[down+right] + OriginPtr[0] - OriginPtr[right] - OriginPtr[down];
+      long int value = OriginPtr[down+right] + OriginPtr[0] - OriginPtr[right] - OriginPtr[down];
 
       assert (value >= 0);
 
@@ -272,13 +253,13 @@ namespace cv
         return 1.0f;
     }
 
-    __int32 ImageRepresentation::getSum(Rect imageROI)
+    int ImageRepresentation::getSum(Rect imageROI)
     {
       // left upper Origin
       int OriginX = imageROI.x-m_offset.x;
       int OriginY = imageROI.y-m_offset.y;
 
-      __uint32 *OriginPtr = &intImage[OriginY * (m_ROI.width+1) + OriginX];
+      unsigned int *OriginPtr = &intImage[OriginY * (m_ROI.width+1) + OriginX];
 
       // Check and fix width and height
       int Width  = imageROI.width;
@@ -290,7 +271,7 @@ namespace cv
       unsigned long down  = Height * (m_ROI.width+1);
       unsigned long right = Width;
 
-      __int32 value = OriginPtr[down+right] + OriginPtr[0] - OriginPtr[right] - OriginPtr[down];
+      int value = OriginPtr[down+right] + OriginPtr[0] - OriginPtr[right] - OriginPtr[down];
 
 
       OriginPtr = NULL;
@@ -325,7 +306,7 @@ namespace cv
       dptr = 0;
 
       memset(intImage, 0x00, ROIlength * sizeof( unsigned int ) );
-      memset(intSqImage, 0x00, ROIlength * sizeof( unsigned __int64 ) ); 
+      memset(intSqImage, 0x00, ROIlength * sizeof( unsigned long int ) );
 
       // current sum
       unsigned int value_tmp = 0;
@@ -1962,11 +1943,6 @@ namespace cv
       m_numDetections = 0;
       m_idxDetections = NULL;
       m_idxBestDetection = -1;
-
-      m_confMatrix = cvCreateMat(1,1,CV_32FC1);
-      m_confMatrixSmooth = cvCreateMat(1,1,CV_32FC1);
-      m_confImageDisplay = cvCreateImage(cvSize(1,1),IPL_DEPTH_8U,1);
-
     }
 
     Detector::~Detector()
@@ -2161,7 +2137,7 @@ namespace cv
       iterationInit = 50;
       for (int curInitStep = 0; curInitStep < iterationInit; curInitStep++)
       {
-        printf ("\rinit tracker... %3.0f %% ", ((float)curInitStep)/(iterationInit-1)*100);	
+        std::cout << "\rinit tracker... " << int(((float) curInitStep) / (iterationInit - 1) * 100) << " %%";
 
         classifier->update (image, trackingPatches->getSpecialRect ("UpperLeft"), -1);
         classifier->update (image, trackedPatch, 1);
@@ -2266,7 +2242,7 @@ namespace cv
       iterationInit = 50;
       for (int curInitStep = 0; curInitStep < iterationInit; curInitStep++)
       {
-        printf ("\rinit tracker... %3.0f %% ", ((float)curInitStep)/(iterationInit-1)*100);	
+        std::cout << "\rinit tracker... " << int(((float)curInitStep)/(iterationInit-1)*100) << " %%";
         classifier->updateSemi (image, trackingPatches->getSpecialRect ("UpperLeft"), -1);
         classifier->updateSemi (image, trackedPatch, 1);
         classifier->updateSemi (image, trackingPatches->getSpecialRect ("UpperRight"), -1);
@@ -2276,13 +2252,13 @@ namespace cv
         classifier->updateSemi (image, trackingPatches->getSpecialRect ("LowerRight"), -1);
         classifier->updateSemi (image, trackedPatch, 1);
       }
-      printf (" done.\n");
+      std::cout << " done." << std::endl;
 
       //one (first) shot learning
       iterationInit = 50;
       for (int curInitStep = 0; curInitStep < iterationInit; curInitStep++)
       {
-        printf ("\rinit detector... %3.0f %% ", ((float)curInitStep)/(iterationInit-1)*100);
+        std::cout << "\rinit detector... " << int(((float)curInitStep)/(iterationInit-1)*100) << " %%";
 
         classifierOff->updateSemi (image, trackedPatch, 1);
         classifierOff->updateSemi (image, trackingPatches->getSpecialRect ("UpperLeft"), -1);
