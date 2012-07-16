@@ -53,21 +53,13 @@ namespace cv
 {
 	namespace mil
 	{
-		typedef unsigned char  uchar;
-		typedef unsigned short ushort;
 		typedef unsigned int   uint;
-		typedef unsigned long  ulong;
 
 		typedef std::vector<float>	vectorf;
-		typedef std::vector<double>	vectord;
 		typedef std::vector<int>		vectori;
-		typedef std::vector<long>	vectorl;
-		typedef std::vector<uchar>	vectoru;
-		typedef std::vector<string>	vectorString;
 		typedef std::vector<bool>	vectorb;
 
 #define  sign(s)	((s > 0 ) ? 1 : ((s<0) ? -1 : 0))
-#define  round(v)   ((int) (v+0.5))
 		
 		//static CvRNG rng_state = cvRNG((int)time(NULL));
 		static CvRNG rng_state = cvRNG(1);
@@ -76,12 +68,7 @@ namespace cv
 		// random generator stuff
 		void				randinitalize( const int init );
 		int					randint( const int min=0, const int max=5 );
-		vectori				randintvec( const int min=0, const int max=5, const uint num=100 );
-		vectorf				randfloatvec( const uint num=100 );
 		float				randfloat();
-		float				randgaus(const float mean, const float std);
-		vectorf				randgausvec(const float mean, const float std, const int num=100);
-		vectori				sampleDisc(const vectorf &weights, const uint num=100);
 		
 		inline float		sigmoid(float x)
 		{
@@ -106,7 +93,8 @@ namespace cv
 			return std::min<int>(std::max<int>(i,min),max);
 		}
 		
-		string				int2str( int i, int ndigits );
+		std::string
+    int2str(int i, int ndigits);
 		//////////////////////////////////////////////////////////////////////////////////////////////////////
 		// vector functions
 		template<class T> class				SortableElement
@@ -157,9 +145,9 @@ namespace cv
 			for( int k=0; k<sz1; k++ )
 				v[k].resize(sz2,val);
 		};
-		
-		
-		
+
+
+
 		////template<class T> inline uint		min_idx( const vector<T> &v )
 		////{
 		////  return (uint)(min_element(v.begin(),v.end())._Myptr-v.begin()._Myptr);
@@ -175,23 +163,7 @@ namespace cv
 			const T* beginPtr = &(*v.begin());
 			return (uint)(findPtr-beginPtr);
 		}
-		
-		template<class T> inline void		normalizeVec( std::vector<T> &v )
-		{
-			T sum = 0;
-			for( uint k=0; k<v.size(); k++ ) sum+=v[k];
-			for( uint k=0; k<v.size(); k++ ) v[k]/=sum;
-		}
-		
-		
-		template<class T> std::ostream&			operator<<(std::ostream& os, const std::vector<T>& v)
-		{  //display vector
-			os << "[ " ;
-			for (size_t i=0; i<v.size(); i++)
-				os << v[i] << " ";
-			os << "]";
-			return os;
-		}
+
 		//////////////////////////////////////////////////////////////////////////////////////////////////////
 		// error functions
 		inline void							abortError( const int line, const char *file, const char *msg=NULL) 
@@ -206,57 +178,6 @@ namespace cv
 		
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Stop Watch
-		class								StopWatch
-		{
-		public:
-			StopWatch() { Reset(); }
-			StopWatch(bool start) { Reset(); if(start) Start(); }
-			
-			inline void Reset(bool restart=false) { 
-				totaltime=0; 
-				running=false; 
-				if(restart) Start();
-			}
-			
-			inline double Elapsed(bool restart=false) { 
-				if(running) Stop();
-				if(restart) Start();
-				return totaltime; 
-			}
-			
-			inline char* ElapsedStr(bool restart=false) { 
-				if(running) Stop();
-				if( totaltime < 60.0f )
-					sprintf( totaltimeStr, "%5.2fs", totaltime );
-				else if( totaltime < 3600.0f )
-					sprintf( totaltimeStr, "%5.2fm", totaltime/60.0f );
-				else 
-					sprintf( totaltimeStr, "%5.2fh", totaltime/3600.0f );
-				if(restart) Start();
-				return totaltimeStr; 
-			}
-			
-			inline void Start() {
-				assert(!running); 
-				running=true;
-				sttime = clock();
-			}
-			
-			inline void Stop() {
-				totaltime += ((double) (clock() - sttime)) / CLOCKS_PER_SEC;
-				assert(running);
-				running=false;
-			}
-			
-		protected:
-			bool running;
-			clock_t sttime;
-			double totaltime;
-			char totaltimeStr[100];
-		};
-		
-		
 		
 		class Sample
     {
@@ -419,7 +340,6 @@ namespace cv
       std::vector<cv::Rect> _rects;
 			vectorf					_rsums;
 			double					_maxSum;
-			static StopWatch		_sw;
 			
 		public:
 			//HaarFtr( HaarFtrParams &params );
@@ -523,7 +443,6 @@ namespace cv
 			ClfStrongParams		*_params;
 			vecFtr				_ftrs;
 			vecFtr				_selectedFtrs;
-			StopWatch			_clfsw;
       cv::Mat_<float> _ftrHist;
 			uint				_counter;
 			
@@ -1024,12 +943,6 @@ namespace cv
 		public:
       static bool
       initFace(TrackerParams* params, const cv::Mat & frame);
-      static void
-      replayTracker(const std::vector<cv::Mat> & vid, const std::string states, std::string outputvid = "",
-                    uint R = 255, uint G = 0, uint B = 0);
-      static void
-      replayTrackers(const std::vector<cv::Mat> & vid, const std::vector<std::string> & statesfile,
-                     const std::string & outputvid, const cv::Mat_<unsigned char> & colors);
 			
 		protected:
 			static cv::CascadeClassifier facecascade;

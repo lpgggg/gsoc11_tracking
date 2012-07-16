@@ -30,32 +30,15 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
-#include "cv_onlinemil.h"
 
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <new>
-#include <cstdlib>
-#include <cstdio>
-#include <ctime>
-#include <cassert>
-#include <algorithm> 
-#include <vector>
-#include <string>
-#include <sstream>
 #include <iomanip>
-#include <list>
-#include <math.h>
 
 #ifdef _OPENMP
-#include "omp.h"
+#include <omp.h>
 #endif
 
-#include <memory.h>
-#include <limits>
+#include "cv_onlinemil.h"
 
-#include <omp.h>
 
 // MILTRACK
 // Copyright 2009 Boris Babenko (bbabenko@cs.ucsd.edu | http://vision.ucsd.edu/~bbabenko).  Distributed under the terms of the GNU Lesser General Public License 
@@ -87,69 +70,10 @@ namespace cv
 		{
 			return cvRandInt( &rng_state )%(max-min+1) + min;
 		}
-		
+
 		float								randfloat( )
 		{
 			return (float)cvRandReal( &rng_state );
-		}
-		
-		vectori								randintvec( const int min, const int max, const uint num )
-		{
-			vectori v(num);
-			for( uint k=0; k<num; k++ ) v[k] = randint(min,max);
-			return v;
-		}
-		vectorf								randfloatvec( const uint num )
-		{
-			vectorf v(num);
-			for( uint k=0; k<num; k++ ) v[k] = randfloat();
-			return v;
-		}
-		float								randgaus(const float mean, const float sigma)
-		{
-			double x, y, r2;
-			
-			do{
-				x = -1 + 2 * randfloat();
-				y = -1 + 2 * randfloat();
-				r2 = x * x + y * y;
-			}
-			while (r2 > 1.0 || r2 == 0);
-			
-			return (float) (sigma * y * sqrt (-2.0 * log (r2) / r2)) + mean;
-		}
-		
-		vectorf								randgausvec(const float mean, const float sigma, const int num)
-		{
-			vectorf v(num);
-			for( int k=0; k<num; k++ ) v[k] = randgaus(mean,sigma);
-			return v;
-		}
-		
-		vectori								sampleDisc(const vectorf &weights, const uint num)
-		{
-			vectori inds(num,0);
-			int maxind = (int)weights.size()-1;
-			
-			// normalize weights
-			vectorf nw(weights.size());
-			
-			nw[0] = weights[0];
-			for( uint k=1; k<weights.size(); k++ )
-				nw[k] = nw[k-1]+weights[k];
-			
-			// get uniform random numbers
-			static vectorf r;
-			r = randfloatvec(num);
-			
-			for( int k=0; k<(int)num; k++ )
-				for( uint j=0; j<weights.size(); j++ ){
-					if( r[k] > nw[j] && inds[k]<maxind) inds[k]++;
-					else break;
-				}
-			
-			return inds;
-			
 		}
 		
 		std::string								int2str( int i, int ndigits )
@@ -217,48 +141,6 @@ namespace cv
           std::max<int>(static_cast<int>(static_cast<float>(img.rows) * p),
                         static_cast<int>(static_cast<float>(img.rows) * (200.0f / static_cast<float>(img.cols)))));
       //cvWaitKey(0);//DEBUG
-    }
-
-    bool
-    DLMRead(cv::Mat_<unsigned char> img, const char *fname, const char *delim)
-    {
-      std::ifstream strm;
-      strm.open(fname, std::ios::in);
-      if (strm.fail())
-        return false;
-      char * tline = new char[40000000];
-
-      // get number of cols
-      strm.getline(tline, 40000000);
-      int ncols = (strtok(tline, " ,") == NULL) ? 0 : 1;
-      while (strtok(NULL, " ,") != NULL)
-        ncols++;
-
-      // read in each row
-      strm.seekg(0, std::ios::beg);
-      cv::Mat_<unsigned char> rowVec;
-      std::vector<cv::Mat_<unsigned char> > allRowVecs;
-      while (!strm.eof() && strm.peek() >= 0)
-      {
-        strm.getline(tline, 40000000);
-        rowVec.create(1, ncols);
-        rowVec(0, 0) = atof(strtok(tline, delim));
-        for (int col = 1; col < ncols; col++)
-          rowVec(0, col) = atof(strtok(NULL, delim));
-        allRowVecs.push_back(rowVec);
-      }
-      int mrows = allRowVecs.size();
-
-      // finally create matrix
-      img.create(mrows, ncols);
-      for (int row = 0; row < mrows; row++)
-      {
-        rowVec = allRowVecs[row];
-        for (int col = 0; col < ncols; col++)
-          img(row, col) = rowVec(0, col);
-      }
-      strm.close();
-      return true;
     }
 
 		
@@ -598,7 +480,6 @@ namespace cv
 		}
 		void				ClfAdaBoost::update(SampleSet &posx, SampleSet &negx)
 		{
-			_clfsw.Start();
 			int numpts = posx.size() + negx.size();
 			
 			// compute ftrs
@@ -700,9 +581,6 @@ namespace cv
 			}
 			
 			_numsamples += numpts;
-			_clfsw.Stop();
-			
-			
 			
 			return;
 		}
@@ -742,7 +620,6 @@ namespace cv
 		}
 		void				ClfMilBoost::update(SampleSet &posx, SampleSet &negx)
 		{
-			_clfsw.Start();
 			int numneg = negx.size();
 			int numpos = posx.size();
 			
@@ -821,7 +698,6 @@ namespace cv
 					_ftrHist(_selectors[j],_counter) = 1.0f/(j+1);
 			
 			_counter++;
-			_clfsw.Stop();
 			
 			return;
 		}
@@ -925,62 +801,6 @@ namespace cv
 		
 		cv::CascadeClassifier Tracker::facecascade = cv::CascadeClassifier();
 
-    void
-    Tracker::replayTracker(const std::vector<cv::Mat> &vid, const std::string statesfile, std::string outputvid, uint R,
-                           uint G, uint B)
-    {
-      cv::Mat_<float> states;
-      DLMRead(states, statesfile.c_str(), ",");
-			cv::Mat colorframe;
-			
-			// save video file
-      cv::VideoWriter w(outputvid.c_str(), CV_FOURCC('I', 'Y', 'U', 'V'), 15, cv::Size(vid[0].cols, vid[0].rows));
-      if (!w.isOpened())
-        abortError(__LINE__, __FILE__, "Error opening video file for output");
-			
-			for( uint k=0; k<vid.size(); k++ )
-			{	
-				cv::cvtColor(vid[k], colorframe, CV_GRAY2RGB);
-				drawRect(colorframe, states(k,2),states(k,3),states(k,0),states(k,1),1,0,2,R,G,B);
-				drawText(colorframe, ("#"+int2str(k,3)).c_str(),1,25,255,255,0);
-				display(colorframe, 1,2);
-				cvWaitKey(1);
-        if (w.isOpened())
-          w << colorframe;
-      }
-    }
-    void
-    Tracker::replayTrackers(const std::vector<cv::Mat> & vid, const std::vector<std::string> & statesfile,
-                            const std::string & outputvid, const cv::Mat_<unsigned char> & colors)
-    {
-      cv::Mat_<unsigned char> states;
-      vector<cv::Mat> resvid(vid.size());
-      cv::Mat colorframe;
-
-      // save video file
-      cv::VideoWriter w(outputvid.c_str(), CV_FOURCC('I', 'Y', 'U', 'V'), 15, cv::Size(vid[0].cols, vid[0].rows));
-      if (!w.isOpened())
-        abortError(__LINE__, __FILE__, "Error opening video file for output");
-			
-			for( uint k=0; k<vid.size(); k++ ){
-				cv::cvtColor(vid[k], resvid[k], CV_GRAY2RGB);
-				drawText(resvid[k], ("#"+int2str(k,3)).c_str(),1,25,255,255,0);
-			}
-			
-			for( uint j=0; j<statesfile.size(); j++ ){
-        DLMRead(states, statesfile[j].c_str(), ",");
-        for (uint k = 0; k < vid.size(); k++)
-          drawRect(resvid[k], states(k, 3), states(k, 2), states(k, 0), states(k, 1), 1, 0, 3, colors(j, 0),
-                   colors(j, 1), colors(j, 2));
-			}
-			
-			for( uint k=0; k<vid.size(); k++ ){
-        display(resvid[k], 1, 2);
-        cv::waitKey(1);
-        if (w.isOpened() && k < vid.size() - 1)
-          w << resvid[k];
-      }
-    }
     bool
     Tracker::initFace(TrackerParams* params, const cv::Mat &frame)
 		{
