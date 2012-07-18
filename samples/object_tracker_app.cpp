@@ -68,7 +68,7 @@ int main(int argc, char** argv)
   bool tracker_failed = false;
 
   // Read in images one-by-one and track them
-  cvNamedWindow("Tracker Display");
+  cv::namedWindow("Tracker Display", cv::WINDOW_NORMAL);
   for (int frame = start; frame <= stop; frame += delta)
   {
     sprintf(filename, "%s/%s%05d.%s", directory, prefix, frame, suffix);
