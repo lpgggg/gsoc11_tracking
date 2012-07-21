@@ -1,8 +1,17 @@
+/*M///////////////////////////////////////////////////////////////////////////////////////
+//
+//  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
+//
+//  By downloading, copying, installing or using the software you agree to this license.
+//  If you do not agree to this license, do not download, install,
+//  copy or use the software.
 //
 //
-//                        Intel License Agreement
+//                           License Agreement
+//                For Open Source Computer Vision Library
 //
-// Copyright (C) 2000, Intel Corporation, all rights reserved.
+// Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
+// Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -15,7 +24,7 @@
 //     this list of conditions and the following disclaimer in the documentation
 //     and/or other materials provided with the distribution.
 //
-//   * The name of Intel Corporation may not be used to endorse or promote products
+//   * The name of the copyright holders may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
 //
 // This software is provided by the copyright holders and contributors "as is" and
@@ -39,9 +48,15 @@
 
 #include "cv_onlinemil.h"
 
-// MILTRACK
-// Copyright 2009 Boris Babenko (bbabenko@cs.ucsd.edu | http://vision.ucsd.edu/~bbabenko).  Distributed under the terms of the GNU Lesser General Public License 
-// (see the included gpl.txt and lgpl.txt files).  Use at own risk.  Please send me your feedback/suggestions/bugs.
+/****************************************************************************************
+COPYRIGHT NOTICE
+ ----------------
+
+ The code has been derived from MILTRACK on http://vision.ucsd.edu/~bbabenko
+ By Boris Babenko
+ The agreement to put it in OpenCV under the BSD license is at the end of hat file
+
+****************************************************************************************/
 
 using namespace std;
 
@@ -836,3 +851,56 @@ namespace cv
 
   } // namespace mil
 } // namespace cv
+
+/* Original email that allows OpenCV to publish that code under BSD
+
+
+Delivered-To: vincent.rabaud@gmail.com
+Received: by 10.194.18.73 with SMTP id u9csp110377wjd;
+        Fri, 20 Jul 2012 11:32:17 -0700 (PDT)
+Return-Path: <bbabenko@gmail.com>
+Received-SPF: pass (google.com: domain of bbabenko@gmail.com designates 10.112.36.163 as permitted sender) client-ip=10.112.36.163
+Authentication-Results: mr.google.com; spf=pass (google.com: domain of bbabenko@gmail.com designates 10.112.36.163 as permitted sender) smtp.mail=bbabenko@gmail.com; dkim=pass header.i=bbabenko@gmail.com
+Received: from mr.google.com ([10.112.36.163])
+        by 10.112.36.163 with SMTP id r3mr3455011lbj.87.1342809136469 (num_hops = 1);
+        Fri, 20 Jul 2012 11:32:16 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to:content-type;
+        bh=zAyfVf0vZ7CADoyo71OCowiEefaRanjmlFaj9sIFrtY=;
+        b=WoLFJ1/l4SRUE5i2Y9BdhaNtsrOiGyX6dbLfJpQgSKowbnVujbqYeElQJ0Kcph4MaT
+         tJ90x+cr2vYrOnIj/gOq2Y1zM8+1NZWARF25PD+MQSD1B7HfhN5pPB//f6qg+0AonMfh
+         7hiwn5ulZLFd8RQLoEyohHXy+0/HVqKf8Pmnbl6ilRbRu84tgjZac1zY6H+NXeJTJhla
+         QhiIYHpC5v7LOG6L44+V0CqOvK6+DtuxS9MVIFYG65RRwP3AMZmy4UwNN3rBOhQI48H/
+         HcuAxou8O4FVt5tKFFjaMJRYTSx5+TOTasDtQRuRLko7RL7F8dRzvCNAFHI/lGN1IGqK
+         baag==
+MIME-Version: 1.0
+Received: by 10.112.36.163 with SMTP id r3mr3455011lbj.87.1342809136462; Fri,
+ 20 Jul 2012 11:32:16 -0700 (PDT)
+Received: by 10.152.1.42 with HTTP; Fri, 20 Jul 2012 11:32:16 -0700 (PDT)
+Date: Fri, 20 Jul 2012 11:32:16 -0700
+Message-ID: <CAD6p0qPmWH02-1w1zYkvLXf=kZCzHQkBY9OhK_FEjhtux2ayMw@mail.gmail.com>
+Subject: miltrack code
+From: Boris Babenko <bbabenko@gmail.com>
+To: Vincent Rabaud <vincent.rabaud@gmail.com>
+Content-Type: multipart/alternative; boundary=485b390f79fe947ab904c5471d05
+
+--485b390f79fe947ab904c5471d05
+Content-Type: text/plain; charset=ISO-8859-1
+
+Hi Vincent,
+
+You (or anyone at WillowGarage) have my permission to change the license of
+my MilTrack code to BSD as you see fit.
+
+Thanks,
+- Boris
+
+--485b390f79fe947ab904c5471d05
+Content-Type: text/html; charset=ISO-8859-1
+
+Hi Vincent,<div><br></div><div>You (or anyone at WillowGarage) have my permission to change the license of my MilTrack code to BSD as you see fit.</div><div><br></div><div>Thanks,</div><div>- Boris</div>
+
+--485b390f79fe947ab904c5471d05--
+
+ */

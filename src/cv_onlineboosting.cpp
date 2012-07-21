@@ -1,8 +1,17 @@
+/*M///////////////////////////////////////////////////////////////////////////////////////
+//
+//  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
+//
+//  By downloading, copying, installing or using the software you agree to this license.
+//  If you do not agree to this license, do not download, install,
+//  copy or use the software.
 //
 //
-//                        Intel License Agreement
+//                           License Agreement
+//                For Open Source Computer Vision Library
 //
-// Copyright (C) 2000, Intel Corporation, all rights reserved.
+// Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
+// Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -15,7 +24,7 @@
 //     this list of conditions and the following disclaimer in the documentation
 //     and/or other materials provided with the distribution.
 //
-//   * The name of Intel Corporation may not be used to endorse or promote products
+//   * The name of the copyright holders may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
 //
 // This software is provided by the copyright holders and contributors "as is" and
@@ -39,14 +48,15 @@
 
 #define sign(x) (((x)>=0)? 1.0f : -1.0f)
 
-/****************************************************************************************\
+/****************************************************************************************
 COPYRIGHT NOTICE
  ----------------
 
- The code has been derived from the following on-line boosting trackers library:
- (http://www.vision.ee.ethz.ch/boostingTrackers/).
+ The code has been derived from: http://www.vision.ee.ethz.ch/boostingTrackers/
+ By Helmut Grabner, Van Gool Luc, Severin Stalder, Michael Grabner, Christian Leistner
+ The agreement to put it in OpenCV under the BSD license is at the end of hat file
 
- /****************************************************************************************/
+****************************************************************************************/
 
 namespace cv
 {
@@ -2345,3 +2355,75 @@ namespace cv
 
   }
 }
+
+/* Original email that allows OpenCV to publish that code under BSD
+
+
+Delivered-To: vrabaud@willowgarage.com
+Received: by 10.68.68.114 with SMTP id v18csp70225pbt;
+        Wed, 18 Jul 2012 05:20:48 -0700 (PDT)
+Received: by 10.180.102.136 with SMTP id fo8mr6253489wib.19.1342614047314;
+        Wed, 18 Jul 2012 05:20:47 -0700 (PDT)
+Return-Path: <grabner@vision.ee.ethz.ch>
+Received: from smtp.ee.ethz.ch (smtp.ee.ethz.ch. [129.132.2.219])
+        by mx.google.com with ESMTPS id u4si28131263wed.25.2012.07.18.05.20.46
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Wed, 18 Jul 2012 05:20:47 -0700 (PDT)
+Received-SPF: pass (google.com: domain of grabner@vision.ee.ethz.ch designates 129.132.2.219 as permitted sender) client-ip=129.132.2.219;
+Authentication-Results: mx.google.com; spf=pass (google.com: domain of grabner@vision.ee.ethz.ch designates 129.132.2.219 as permitted sender) smtp.mail=grabner@vision.ee.ethz.ch
+Received: from localhost (localhost [127.0.0.1])
+  by smtp.ee.ethz.ch (Postfix) with ESMTP id BD95ED930C;
+  Wed, 18 Jul 2012 14:20:45 +0200 (MEST)
+X-Virus-Scanned: by amavisd-new on smtp.ee.ethz.ch
+Received: from smtp.ee.ethz.ch ([127.0.0.1])
+  by localhost (.ee.ethz.ch [127.0.0.1]) (amavisd-new, port 10024)
+  with LMTP id eRmMmgCtT1I8; Wed, 18 Jul 2012 14:20:45 +0200 (MEST)
+Received: from [129.132.158.18] (biwiwin08.ee.ethz.ch [129.132.158.18])
+  by smtp.ee.ethz.ch (Postfix) with ESMTP id 8CC0ED9307;
+  Wed, 18 Jul 2012 14:20:45 +0200 (MEST)
+Message-ID: <5006AA1D.1010906@vision.ee.ethz.ch>
+Date: Wed, 18 Jul 2012 14:20:45 +0200
+From: Helmut Grabner <grabner@vision.ee.ethz.ch>
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en; rv:1.9.2.15) Gecko/20110303 Thunderbird/3.1.9
+MIME-Version: 1.0
+To: Vincent Rabaud <vrabaud@willowgarage.com>
+CC: Van Gool Luc <vangool@vision.ee.ethz.ch>,
+ Horst Bischof <bischof@icg.tugraz.at>,
+ Severin Stalder <sstalder@vision.ee.ethz.ch>,
+ Michael Grabner <Michael.Grabner@microsoft.com>,
+ Christian Leistner <leistner@vision.ee.ethz.ch>,
+ Helmut Grabner <grabner@vision.ee.ethz.ch>
+Subject: Re: online boosting tracking in OpenCV
+References: <CAK+j2t8Ch3hGO_xvA8XMVSWtydGBCVgq63=pzNyAaKvh4TaZfg@mail.gmail.com>
+In-Reply-To: <CAK+j2t8Ch3hGO_xvA8XMVSWtydGBCVgq63=pzNyAaKvh4TaZfg@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+
+hi vincent,
+
+> We definitely respect any of your decision (vision is already very
+> grateful for your research :) ) but if you are willing to change your
+> code to BSD, we could then integrate it seemlessly into OpenCV. All I
+> would need from you is just an answer to this email saying: I am willing
+> to have OpenCV use my code as BSD.
+
+I am willing to have OpenCV use my code (on-line boosting trackers) as BSD.
+
+> And if you do accept so, please also make sure that you discuss it with
+> the co-authors of the code and that they are cced in that mail.
+
+[x] done.
+
+cheers
+    helmut
+
+--
+-----------------------------------------------------------
+Dr. Helmut GRABNER               grabner@vision.ee.ethz.ch
+Computer Vision Lab        www.vision.ee.ethz.ch/~hegrabne
+ETH-Zurich, ETZ J78                 phone: +41 44 632 4990
+Sternwartstr. 7                     fax:   +41 44 632 1199
+CH-8092 Zurich, Switzerland         cell:  +41 78 625 3693
+-----------------------------------------------------------
+
+*/
