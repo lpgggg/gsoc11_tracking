@@ -1,42 +1,42 @@
 /*M///////////////////////////////////////////////////////////////////////////////////////
-//
-//  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
-//
-//  By downloading, copying, installing or using the software you agree to this license.
-//  If you do not agree to this license, do not download, install,
-//  copy or use the software.
-//
-//
-//                        Intel License Agreement
-//
-// Copyright (C) 2000, Intel Corporation, all rights reserved.
-// Third party copyrights are property of their respective owners.
-//
-// Redistribution and use in source and binary forms, with or without modification,
-// are permitted provided that the following conditions are met:
-//
-//   * Redistribution's of source code must retain the above copyright notice,
-//     this list of conditions and the following disclaimer.
-//
-//   * Redistribution's in binary form must reproduce the above copyright notice,
-//     this list of conditions and the following disclaimer in the documentation
-//     and/or other materials provided with the distribution.
-//
-//   * The name of Intel Corporation may not be used to endorse or promote products
-//     derived from this software without specific prior written permission.
-//
-// This software is provided by the copyright holders and contributors "as is" and
-// any express or implied warranties, including, but not limited to, the implied
-// warranties of merchantability and fitness for a particular purpose are disclaimed.
-// In no event shall the Intel Corporation or contributors be liable for any direct,
-// indirect, incidental, special, exemplary, or consequential damages
-// (including, but not limited to, procurement of substitute goods or services;
-// loss of use, data, or profits; or business interruption) however caused
-// and on any theory of liability, whether in contract, strict liability,
-// or tort (including negligence or otherwise) arising in any way out of
-// the use of this software, even if advised of the possibility of such damage.
-//
-//M*/
+ //
+ //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
+ //
+ //  By downloading, copying, installing or using the software you agree to this license.
+ //  If you do not agree to this license, do not download, install,
+ //  copy or use the software.
+ //
+ //
+ //                        Intel License Agreement
+ //
+ // Copyright (C) 2000, Intel Corporation, all rights reserved.
+ // Third party copyrights are property of their respective owners.
+ //
+ // Redistribution and use in source and binary forms, with or without modification,
+ // are permitted provided that the following conditions are met:
+ //
+ //   * Redistribution's of source code must retain the above copyright notice,
+ //     this list of conditions and the following disclaimer.
+ //
+ //   * Redistribution's in binary form must reproduce the above copyright notice,
+ //     this list of conditions and the following disclaimer in the documentation
+ //     and/or other materials provided with the distribution.
+ //
+ //   * The name of Intel Corporation may not be used to endorse or promote products
+ //     derived from this software without specific prior written permission.
+ //
+ // This software is provided by the copyright holders and contributors "as is" and
+ // any express or implied warranties, including, but not limited to, the implied
+ // warranties of merchantability and fitness for a particular purpose are disclaimed.
+ // In no event shall the Intel Corporation or contributors be liable for any direct,
+ // indirect, incidental, special, exemplary, or consequential damages
+ // (including, but not limited to, procurement of substitute goods or services;
+ // loss of use, data, or profits; or business interruption) however caused
+ // and on any theory of liability, whether in contract, strict liability,
+ // or tort (including negligence or otherwise) arising in any way out of
+ // the use of this software, even if advised of the possibility of such damage.
+ //
+ //M*/
 
 #include <iostream>
 
@@ -65,12 +65,13 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  ObjectTrackerParams::ObjectTrackerParams(const int algorithm, const int num_classifiers,
-    const float overlap, const float search_factor, const float pos_radius_train,
-      const int neg_num_train, const int num_features)
+  ObjectTrackerParams::ObjectTrackerParams(const int algorithm, const int num_classifiers, const float overlap,
+                                           const float search_factor, const float pos_radius_train,
+                                           const int neg_num_train, const int num_features)
   {
     // Make sure a valid algorithm flag is used before storing it
-    if ( (algorithm != CV_ONLINEBOOSTING) && (algorithm != CV_SEMIONLINEBOOSTING) && (algorithm != CV_ONLINEMIL) && (algorithm != CV_LINEMOD) )
+    if ((algorithm != CV_ONLINEBOOSTING) && (algorithm != CV_SEMIONLINEBOOSTING) && (algorithm != CV_ONLINEMIL)
+        && (algorithm != CV_LINEMOD))
     {
       // Use CV_ERROR?
       std::cerr << "ObjectTrackerParams::ObjectTrackerParams(...) -- ERROR!  Invalid algorithm choice.\n";
@@ -137,8 +138,9 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool OnlineBoostingAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
-    const CvRect& init_bounding_box)
+  bool
+  OnlineBoostingAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
+                                      const CvRect& init_bounding_box)
   {
     // Import the image
     import_image(image);
@@ -146,7 +148,9 @@ namespace cv
     // If the boosting tracker has already been allocated, first de-allocate it
     if (tracker_ != NULL)
     {
-      std::cerr << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n" << std::endl;
+      std::cerr
+          << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n"
+          << std::endl;
       delete tracker_;
       tracker_ = NULL;
     }
@@ -154,7 +158,9 @@ namespace cv
     // Do the same for the image frame representation
     if (cur_frame_rep_ != NULL)
     {
-      std::cerr << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n" << std::endl;
+      std::cerr
+          << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n"
+          << std::endl;
       delete cur_frame_rep_;
       cur_frame_rep_ = NULL;
     }
@@ -162,7 +168,7 @@ namespace cv
     // (Re-)Initialize the boosting tracker
     cv::Size imageSize(image_.cols, image_.rows);
     cur_frame_rep_ = new boosting::ImageRepresentation(image_, imageSize);
-    cv::Rect wholeImage(0,0,imageSize.width,imageSize.height);
+    cv::Rect wholeImage(0, 0, imageSize.width, imageSize.height);
     cv::Rect tracking_rect = init_bounding_box;
     tracking_rect_size_ = cv::Size(tracking_rect.width, tracking_rect.height);
     tracker_ = new boosting::BoostingTracker(cur_frame_rep_, tracking_rect, wholeImage, params.num_classifiers_);
@@ -175,8 +181,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool OnlineBoostingAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
-    cv::Rect & track_box)
+  bool
+  OnlineBoostingAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params, cv::Rect & track_box)
   {
     // Import the image
     import_image(image);
@@ -184,19 +190,23 @@ namespace cv
     // Make sure the tracker has already been successfully initialized
     if (tracker_ == NULL)
     {
-      std::cerr << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n" << std::endl;
+      std::cerr
+          << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n"
+          << std::endl;
       return false;
     }
     if (cur_frame_rep_ == NULL)
     {
-      std::cerr << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n" << std::endl;
+      std::cerr
+          << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n"
+          << std::endl;
       return false;
     }
 
     // Calculate the patches within the search region
     cv::Size imageSize(image_.cols, image_.rows);
-    cv::Rect wholeImage(0,0, imageSize.width, imageSize.height);
-    boosting::Patches *trackingPatches;	
+    cv::Rect wholeImage(0, 0, imageSize.width, imageSize.height);
+    boosting::Patches *trackingPatches;
     cv::Rect searchRegion = tracker_->getTrackingROI(params.search_factor_);
     trackingPatches = new boosting::PatchesRegularScan(searchRegion, wholeImage, tracking_rect_size_, params.overlap_);
 
@@ -222,7 +232,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  void OnlineBoostingAlgorithm::import_image(const cv::Mat & image)
+  void
+  OnlineBoostingAlgorithm::import_image(const cv::Mat & image)
   {
     // We want the internal version of the image to be gray-scale, so let's
     // do that here.  We'll handle cases where the input is either RGB, RGBA,
@@ -234,7 +245,7 @@ namespace cv
     if (image.empty())
     {
       std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
-      exit(0);  // <--- CV_ERROR?
+      exit(0); // <--- CV_ERROR?
     }
 
     // Now copy it in appropriately as a gray-scale, 8-bit image
@@ -252,7 +263,8 @@ namespace cv
     }
     else
     {
-      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n" << std::endl;
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n"
+                << std::endl;
       exit(0);
     }
   }
@@ -287,8 +299,9 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool SemiOnlineBoostingAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
-    const CvRect& init_bounding_box)
+  bool
+  SemiOnlineBoostingAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
+                                          const CvRect& init_bounding_box)
   {
     // Import the image
     import_image(image);
@@ -296,7 +309,9 @@ namespace cv
     // If the boosting tracker has already been allocated, first de-allocate it
     if (tracker_ != NULL)
     {
-      std::cerr << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n" << std::endl;
+      std::cerr
+          << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n"
+          << std::endl;
       delete tracker_;
       tracker_ = NULL;
     }
@@ -304,7 +319,9 @@ namespace cv
     // Do the same for the image frame representation
     if (cur_frame_rep_ != NULL)
     {
-      std::cerr << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n" << std::endl;
+      std::cerr
+          << "OnlineBoostingAlgorithm::initialize(...) -- WARNING!  Boosting tracker already initialized.  Resetting now...\n"
+          << std::endl;
       delete cur_frame_rep_;
       cur_frame_rep_ = NULL;
     }
@@ -312,7 +329,7 @@ namespace cv
     // (Re-)Initialize the boosting tracker
     cv::Size imageSize(image_.cols, image_.rows);
     cur_frame_rep_ = new boosting::ImageRepresentation(image_, imageSize);
-    cv::Rect wholeImage = cv::Rect(0,0,imageSize.width,imageSize.height);
+    cv::Rect wholeImage = cv::Rect(0, 0, imageSize.width, imageSize.height);
     cv::Rect tracking_rect = init_bounding_box;
     tracking_rect_size_ = cv::Size(tracking_rect.width, tracking_rect.height);
     tracker_ = new boosting::SemiBoostingTracker(cur_frame_rep_, tracking_rect, wholeImage, params.num_classifiers_);
@@ -325,8 +342,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool SemiOnlineBoostingAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
-    cv::Rect & track_box)
+  bool
+  SemiOnlineBoostingAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params, cv::Rect & track_box)
   {
     // Import the image
     import_image(image);
@@ -334,19 +351,23 @@ namespace cv
     // Make sure the tracker has already been successfully initialized
     if (tracker_ == NULL)
     {
-      std::cerr << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n" << std::endl;
+      std::cerr
+          << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n"
+          << std::endl;
       return false;
     }
     if (cur_frame_rep_ == NULL)
     {
-      std::cerr << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n" << std::endl;
+      std::cerr
+          << "OnlineBoostingAlgorithm::update(...) -- ERROR!  Trying to call update without properly initializing the tracker!\n"
+          << std::endl;
       return false;
     }
 
     // Calculate the patches within the search region
     cv::Size imageSize(image_.cols, image_.rows);
-    cv::Rect wholeImage = cv::Rect(0,0,imageSize.width,imageSize.height);
-    boosting::Patches *trackingPatches;	
+    cv::Rect wholeImage = cv::Rect(0, 0, imageSize.width, imageSize.height);
+    boosting::Patches *trackingPatches;
     cv::Rect searchRegion = tracker_->getTrackingROI(params.search_factor_);
     trackingPatches = new boosting::PatchesRegularScan(searchRegion, wholeImage, tracking_rect_size_, params.overlap_);
 
@@ -372,7 +393,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  void SemiOnlineBoostingAlgorithm::import_image(const cv::Mat & image)
+  void
+  SemiOnlineBoostingAlgorithm::import_image(const cv::Mat & image)
   {
     // We want the internal version of the image to be gray-scale, so let's
     // do that here.  We'll handle cases where the input is either RGB, RGBA,
@@ -384,7 +406,7 @@ namespace cv
     if (image.empty())
     {
       std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
-      exit(0);  // <--- CV_ERROR?
+      exit(0); // <--- CV_ERROR?
     }
 
     // Now copy it in appropriately as a gray-scale, 8-bit image
@@ -402,7 +424,8 @@ namespace cv
     }
     else
     {
-      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n" << std::endl;
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n"
+                << std::endl;
       exit(0);
     }
   }
@@ -412,15 +435,15 @@ namespace cv
   //
 
   //---------------------------------------------------------------------------
-  OnlineMILAlgorithm::OnlineMILAlgorithm() 
-    :
+  OnlineMILAlgorithm::OnlineMILAlgorithm()
+      :
         TrackingAlgorithm(),
         is_initialized(false)
   {
-    cv::mil::randinitalize((int)time(0));
+    cv::mil::randinitalize((int) time(0));
     clfparams_ = new cv::mil::ClfMilBoostParams();
     ftrparams_ = &haarparams_;
-    clfparams_->_ftrParams	= ftrparams_;
+    clfparams_->_ftrParams = ftrparams_;
   }
 
   //---------------------------------------------------------------------------
@@ -430,42 +453,43 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool OnlineMILAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
-    const CvRect& init_bounding_box)
+  bool
+  OnlineMILAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
+                                 const CvRect& init_bounding_box)
   {
     import_image(image);
 
-    ((cv::mil::ClfMilBoostParams*)clfparams_)->_numSel	= params.num_classifiers_;
-    ((cv::mil::ClfMilBoostParams*)clfparams_)->_numFeat = params.num_features_;
+    ((cv::mil::ClfMilBoostParams*) clfparams_)->_numSel = params.num_classifiers_;
+    ((cv::mil::ClfMilBoostParams*) clfparams_)->_numFeat = params.num_features_;
     tracker_params_._posradtrain = params.pos_radius_train_;
     tracker_params_._negnumtrain = params.neg_num_train_;
 
     // Tracking parameters
     tracker_params_._init_negnumtrain = 65;
     tracker_params_._init_postrainrad = 3.0f;
-    tracker_params_._initstate[0]	= (float)init_bounding_box.x;
-    tracker_params_._initstate[1]	= (float)init_bounding_box.y;
-    tracker_params_._initstate[2]	= (float)init_bounding_box.width;
-    tracker_params_._initstate[3]	= (float)init_bounding_box.height;
-    tracker_params_._srchwinsz		= 25;
+    tracker_params_._initstate[0] = (float) init_bounding_box.x;
+    tracker_params_._initstate[1] = (float) init_bounding_box.y;
+    tracker_params_._initstate[2] = (float) init_bounding_box.width;
+    tracker_params_._initstate[3] = (float) init_bounding_box.height;
+    tracker_params_._srchwinsz = 25;
     tracker_params_._negsamplestrat = 1;
-    tracker_params_._initWithFace	= false;
-    tracker_params_._debugv		= false;
-    tracker_params_._disp			= false; // set this to true if you want to see video output (though it slows things down)
+    tracker_params_._initWithFace = false;
+    tracker_params_._debugv = false;
+    tracker_params_._disp = false; // set this to true if you want to see video output (though it slows things down)
 
-    clfparams_->_ftrParams->_width	= (cv::mil::uint)init_bounding_box.width;
-    clfparams_->_ftrParams->_height	= (cv::mil::uint)init_bounding_box.height;
+    clfparams_->_ftrParams->_width = (cv::mil::uint) init_bounding_box.width;
+    clfparams_->_ftrParams->_height = (cv::mil::uint) init_bounding_box.height;
 
     tracker_.init(image_, tracker_params_, clfparams_);
-    
+
     // Return success
     is_initialized = true;
     return true;
   }
 
   //---------------------------------------------------------------------------
-  bool OnlineMILAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
-    cv::Rect & track_box)
+  bool
+  OnlineMILAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params, cv::Rect & track_box)
   {
     if (!is_initialized)
     {
@@ -486,7 +510,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  void OnlineMILAlgorithm::import_image(const cv::Mat & image)
+  void
+  OnlineMILAlgorithm::import_image(const cv::Mat & image)
   {
     // We want the internal version of the image to be gray-scale, so let's
     // do that here.  We'll handle cases where the input is either RGB, RGBA,
@@ -498,7 +523,7 @@ namespace cv
     if (image.empty())
     {
       std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Input image pointer is NULL!\n" << std::endl;
-      exit(0);  // <--- CV_ERROR?
+      exit(0); // <--- CV_ERROR?
     }
 
     // Now copy it in appropriately as a gray-scale, 8-bit image
@@ -516,7 +541,8 @@ namespace cv
     }
     else
     {
-      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n" << std::endl;
+      std::cerr << "OnlineBoostingAlgorithm::import_image(...) -- ERROR!  Invalid number of channels for input image!\n"
+                << std::endl;
       exit(0);
     }
   }
@@ -526,8 +552,9 @@ namespace cv
   //
 
   //---------------------------------------------------------------------------
-  LINEMODAlgorithm::LINEMODAlgorithm() 
-    : TrackingAlgorithm()
+  LINEMODAlgorithm::LINEMODAlgorithm()
+      :
+        TrackingAlgorithm()
   {
   }
 
@@ -537,23 +564,25 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool LINEMODAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
-    const CvRect& init_bounding_box)
+  bool
+  LINEMODAlgorithm::initialize(const cv::Mat & image, const ObjectTrackerParams& params,
+                               const CvRect& init_bounding_box)
   {
     // Return success
     return true;
   }
 
   //---------------------------------------------------------------------------
-  bool LINEMODAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params,
-    cv::Rect & track_box)
+  bool
+  LINEMODAlgorithm::update(const cv::Mat & image, const ObjectTrackerParams& params, cv::Rect & track_box)
   {
     // Return success
     return true;
   }
 
   //---------------------------------------------------------------------------
-  void LINEMODAlgorithm::import_image(const cv::Mat & image)
+  void
+  LINEMODAlgorithm::import_image(const cv::Mat & image)
   {
   }
 
@@ -563,7 +592,9 @@ namespace cv
 
   //---------------------------------------------------------------------------
   ObjectTracker::ObjectTracker(const ObjectTrackerParams& params)
-    : initialized_(false), tracker_(NULL)
+      :
+        initialized_(false),
+        tracker_(NULL)
   {
     // Store configurable parameters internally
     set_params(params);
@@ -571,25 +602,25 @@ namespace cv
     // Allocate the proper tracking algorithm (note: error-checking that a valid
     // tracking algorithm parameter is used is done in the ObjectTrackerParams
     // constructor, so at this point we are confident it's valid).
-    switch(params.algorithm_)
+    switch (params.algorithm_)
     {
-    case ObjectTrackerParams::CV_ONLINEBOOSTING:
-      tracker_ = new OnlineBoostingAlgorithm();
-      break;
-    case ObjectTrackerParams::CV_SEMIONLINEBOOSTING:
-      tracker_ = new SemiOnlineBoostingAlgorithm();
-      break;
-    case ObjectTrackerParams::CV_ONLINEMIL:
-      tracker_ = new OnlineMILAlgorithm();
-      break;
-    case ObjectTrackerParams::CV_LINEMOD:
-      tracker_ = new LINEMODAlgorithm();
-      break;
-    default:
-      // By default, if an invalid choice somehow gets through lets use online boosting?
-      // Or throw an error and don't continue?
-      tracker_ = new OnlineBoostingAlgorithm();
-      break;
+      case ObjectTrackerParams::CV_ONLINEBOOSTING:
+        tracker_ = new OnlineBoostingAlgorithm();
+        break;
+      case ObjectTrackerParams::CV_SEMIONLINEBOOSTING:
+        tracker_ = new SemiOnlineBoostingAlgorithm();
+        break;
+      case ObjectTrackerParams::CV_ONLINEMIL:
+        tracker_ = new OnlineMILAlgorithm();
+        break;
+      case ObjectTrackerParams::CV_LINEMOD:
+        tracker_ = new LINEMODAlgorithm();
+        break;
+      default:
+        // By default, if an invalid choice somehow gets through lets use online boosting?
+        // Or throw an error and don't continue?
+        tracker_ = new OnlineBoostingAlgorithm();
+        break;
     }
   }
 
@@ -604,7 +635,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool ObjectTracker::initialize(const cv::Mat & image, const CvRect& bounding_box)
+  bool
+  ObjectTracker::initialize(const cv::Mat & image, const CvRect& bounding_box)
   {
     // Initialize the tracker and if it works, set the flag that we're now initialized
     // to true so that update() can work properly.
@@ -623,7 +655,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  bool ObjectTracker::update(const cv::Mat & image, cv::Rect & track_box)
+  bool
+  ObjectTracker::update(const cv::Mat & image, cv::Rect & track_box)
   {
     // First make sure we have already initialized.  Otherwise we can't continue.
     if (!initialized_)
@@ -640,7 +673,8 @@ namespace cv
   }
 
   //---------------------------------------------------------------------------
-  void ObjectTracker::set_params(const ObjectTrackerParams& params)
+  void
+  ObjectTracker::set_params(const ObjectTrackerParams& params)
   {
     tracker_params_ = params;
   }
