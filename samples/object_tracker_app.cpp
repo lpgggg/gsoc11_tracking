@@ -128,13 +128,12 @@ main(int argc, char** argv)
     cv::imshow("Tracker Display", image);
 
     // Check if the user wants to exit early
-    int key = cvWaitKey(1);
+    int key = cv::waitKey(1);
     if (key == 'q' || key == 'Q')
     {
       break;
     }
   }
-  cvDestroyWindow("Tracker Display");
 
   // Exit application
   std::cout << std::endl;

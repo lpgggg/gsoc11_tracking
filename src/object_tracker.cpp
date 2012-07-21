@@ -442,7 +442,7 @@ namespace cv
         TrackingAlgorithm(),
         is_initialized(false)
   {
-    cv::mil::randinitalize((int) time(0));
+    cv::mil::RandomGenerator::initialize((int) time(0));
     clfparams_ = new cv::mil::ClfMilBoostParams();
     ftrparams_ = &haarparams_;
     clfparams_->_ftrParams = ftrparams_;

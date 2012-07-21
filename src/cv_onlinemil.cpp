@@ -1,44 +1,44 @@
 /*M///////////////////////////////////////////////////////////////////////////////////////
-//
-//  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
-//
-//  By downloading, copying, installing or using the software you agree to this license.
-//  If you do not agree to this license, do not download, install,
-//  copy or use the software.
-//
-//
-//                           License Agreement
-//                For Open Source Computer Vision Library
-//
-// Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
-// Third party copyrights are property of their respective owners.
-//
-// Redistribution and use in source and binary forms, with or without modification,
-// are permitted provided that the following conditions are met:
-//
-//   * Redistribution's of source code must retain the above copyright notice,
-//     this list of conditions and the following disclaimer.
-//
-//   * Redistribution's in binary form must reproduce the above copyright notice,
-//     this list of conditions and the following disclaimer in the documentation
-//     and/or other materials provided with the distribution.
-//
-//   * The name of the copyright holders may not be used to endorse or promote products
-//     derived from this software without specific prior written permission.
-//
-// This software is provided by the copyright holders and contributors "as is" and
-// any express or implied warranties, including, but not limited to, the implied
-// warranties of merchantability and fitness for a particular purpose are disclaimed.
-// In no event shall the Intel Corporation or contributors be liable for any direct,
-// indirect, incidental, special, exemplary, or consequential damages
-// (including, but not limited to, procurement of substitute goods or services;
-// loss of use, data, or profits; or business interruption) however caused
-// and on any theory of liability, whether in contract, strict liability,
-// or tort (including negligence or otherwise) arising in any way out of
-// the use of this software, even if advised of the possibility of such damage.
-//
-//M*/
+ //
+ //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
+ //
+ //  By downloading, copying, installing or using the software you agree to this license.
+ //  If you do not agree to this license, do not download, install,
+ //  copy or use the software.
+ //
+ //
+ //                           License Agreement
+ //                For Open Source Computer Vision Library
+ //
+ // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
+ // Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
+ // Third party copyrights are property of their respective owners.
+ //
+ // Redistribution and use in source and binary forms, with or without modification,
+ // are permitted provided that the following conditions are met:
+ //
+ //   * Redistribution's of source code must retain the above copyright notice,
+ //     this list of conditions and the following disclaimer.
+ //
+ //   * Redistribution's in binary form must reproduce the above copyright notice,
+ //     this list of conditions and the following disclaimer in the documentation
+ //     and/or other materials provided with the distribution.
+ //
+ //   * The name of the copyright holders may not be used to endorse or promote products
+ //     derived from this software without specific prior written permission.
+ //
+ // This software is provided by the copyright holders and contributors "as is" and
+ // any express or implied warranties, including, but not limited to, the implied
+ // warranties of merchantability and fitness for a particular purpose are disclaimed.
+ // In no event shall the Intel Corporation or contributors be liable for any direct,
+ // indirect, incidental, special, exemplary, or consequential damages
+ // (including, but not limited to, procurement of substitute goods or services;
+ // loss of use, data, or profits; or business interruption) however caused
+ // and on any theory of liability, whether in contract, strict liability,
+ // or tort (including negligence or otherwise) arising in any way out of
+ // the use of this software, even if advised of the possibility of such damage.
+ //
+ //M*/
 
 #include <iomanip>
 
@@ -49,14 +49,14 @@
 #include "cv_onlinemil.h"
 
 /****************************************************************************************
-COPYRIGHT NOTICE
+ COPYRIGHT NOTICE
  ----------------
 
  The code has been derived from MILTRACK on http://vision.ucsd.edu/~bbabenko
  By Boris Babenko
  The agreement to put it in OpenCV under the BSD license is at the end of hat file
 
-****************************************************************************************/
+ ****************************************************************************************/
 
 using namespace std;
 
@@ -73,25 +73,9 @@ namespace cv
   namespace mil
   {
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    // random functions
-
-    void
-    randinitalize(const int init)
-    {
-      rng_state = cvRNG(init);
-    }
-
-    int
-    randint(const int min, const int max)
-    {
-      return cvRandInt(&rng_state) % (max - min + 1) + min;
-    }
-
-    float
-    randfloat()
-    {
-      return (float) cvRandReal(&rng_state);
-    }
+    /** Static random number generator shared between functions
+     */
+    cv::RNG RandomGenerator::rng_ = cv::RNG();
 
     std::string
     int2str(int i, int ndigits)
@@ -107,14 +91,8 @@ namespace cv
       CV_Assert(!img.empty());
       char name[1024];
       sprintf(name, "Figure %d", fignum);
-      cvNamedWindow(name, 0/*CV_WINDOW_AUTOSIZE*/);
+      cv::namedWindow(name, CV_WINDOW_AUTOSIZE);
       cv::imshow(name, img);
-      cvResizeWindow(
-          name,
-          std::max<int>(static_cast<int>(static_cast<float>(img.cols) * p), 200),
-          std::max<int>(static_cast<int>(static_cast<float>(img.rows) * p),
-                        static_cast<int>(static_cast<float>(img.rows) * (200.0f / static_cast<float>(img.cols)))));
-      //cvWaitKey(0);//DEBUG
     }
 
     Sample::Sample(const cv::Mat & img, const std::vector<cv::Mat_<float> > & ii_imgs, int row, int col, int width,
@@ -155,7 +133,7 @@ namespace cv
         for (int c = mincol; c <= (int) maxcol; c++)
         {
           dist = (y - r) * (y - r) + (x - c) * (x - c);
-          if (randfloat() < prob && dist < inradsq && dist >= outradsq)
+          if (RandomGenerator::randfloat() < prob && dist < inradsq && dist >= outradsq)
           {
             _samples[i]._img = img;
             _samples[i]._ii_imgs = ii_imgs;
@@ -182,8 +160,8 @@ namespace cv
       {
         _samples[i]._img = img;
         _samples[i]._ii_imgs = ii_imgs;
-        _samples[i]._col = randint(0, colsz);
-        _samples[i]._row = randint(0, rowsz);
+        _samples[i]._col = RandomGenerator::randint(0, colsz);
+        _samples[i]._row = RandomGenerator::randint(0, rowsz);
         _samples[i]._height = h;
         _samples[i]._width = w;
       }
@@ -216,7 +194,7 @@ namespace cv
       HaarFtrParams *p = (HaarFtrParams*) op;
       _width = p->_width;
       _height = p->_height;
-      int numrects = randint(p->_minNumRect, p->_maxNumRect);
+      int numrects = RandomGenerator::randint(p->_minNumRect, p->_maxNumRect);
       _rects.resize(numrects);
       _weights.resize(numrects);
       _rsums.resize(numrects);
@@ -224,14 +202,14 @@ namespace cv
 
       for (int k = 0; k < numrects; k++)
       {
-        _weights[k] = randfloat() * 2 - 1;
-        _rects[k].x = randint(0, (uint) (p->_width - 3));
-        _rects[k].y = randint(0, (uint) (p->_height - 3));
-        _rects[k].width = randint(1, (p->_width - _rects[k].x - 2));
-        _rects[k].height = randint(1, (p->_height - _rects[k].y - 2));
+        _weights[k] = RandomGenerator::randfloat(-1, 1);
+        _rects[k].x = RandomGenerator::randint(0, (uint) (p->_width - 3));
+        _rects[k].y = RandomGenerator::randint(0, (uint) (p->_height - 3));
+        _rects[k].width = RandomGenerator::randint(1, (p->_width - _rects[k].x - 2));
+        _rects[k].height = RandomGenerator::randint(1, (p->_height - _rects[k].y - 2));
         _rsums[k] = std::abs(_weights[k] * (_rects[k].width + 1) * (_rects[k].height + 1) * 255);
-        //_rects[k].width = randint(1,3);
-        //_rects[k].height = randint(1,3);
+        //_rects[k].width = RandomGenerator::randint(1,3);
+        //_rects[k].height = RandomGenerator::randint(1,3);
       }
 
       if (p->_numCh < 0)
@@ -241,7 +219,7 @@ namespace cv
           p->_numCh += p->_useChannels[k] >= 0;
       }
 
-      _channel = p->_useChannels[randint(0, p->_numCh - 1)];
+      _channel = p->_useChannels[RandomGenerator::randint(0, p->_numCh - 1)];
     }
 
     cv::Mat
@@ -783,7 +761,7 @@ namespace cv
           probimg(detectx[k]._row, detectx[k]._col) = prob[k];
 
         display(probimg, 2, 2);
-        cvWaitKey(1);
+        cv::waitKey(1);
       }
 
       // find best location
@@ -855,52 +833,52 @@ namespace cv
 /* Original email that allows OpenCV to publish that code under BSD
 
 
-Delivered-To: vincent.rabaud@gmail.com
-Received: by 10.194.18.73 with SMTP id u9csp110377wjd;
-        Fri, 20 Jul 2012 11:32:17 -0700 (PDT)
-Return-Path: <bbabenko@gmail.com>
-Received-SPF: pass (google.com: domain of bbabenko@gmail.com designates 10.112.36.163 as permitted sender) client-ip=10.112.36.163
-Authentication-Results: mr.google.com; spf=pass (google.com: domain of bbabenko@gmail.com designates 10.112.36.163 as permitted sender) smtp.mail=bbabenko@gmail.com; dkim=pass header.i=bbabenko@gmail.com
-Received: from mr.google.com ([10.112.36.163])
-        by 10.112.36.163 with SMTP id r3mr3455011lbj.87.1342809136469 (num_hops = 1);
-        Fri, 20 Jul 2012 11:32:16 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=zAyfVf0vZ7CADoyo71OCowiEefaRanjmlFaj9sIFrtY=;
-        b=WoLFJ1/l4SRUE5i2Y9BdhaNtsrOiGyX6dbLfJpQgSKowbnVujbqYeElQJ0Kcph4MaT
-         tJ90x+cr2vYrOnIj/gOq2Y1zM8+1NZWARF25PD+MQSD1B7HfhN5pPB//f6qg+0AonMfh
-         7hiwn5ulZLFd8RQLoEyohHXy+0/HVqKf8Pmnbl6ilRbRu84tgjZac1zY6H+NXeJTJhla
-         QhiIYHpC5v7LOG6L44+V0CqOvK6+DtuxS9MVIFYG65RRwP3AMZmy4UwNN3rBOhQI48H/
-         HcuAxou8O4FVt5tKFFjaMJRYTSx5+TOTasDtQRuRLko7RL7F8dRzvCNAFHI/lGN1IGqK
-         baag==
-MIME-Version: 1.0
-Received: by 10.112.36.163 with SMTP id r3mr3455011lbj.87.1342809136462; Fri,
+ Delivered-To: vincent.rabaud@gmail.com
+ Received: by 10.194.18.73 with SMTP id u9csp110377wjd;
+ Fri, 20 Jul 2012 11:32:17 -0700 (PDT)
+ Return-Path: <bbabenko@gmail.com>
+ Received-SPF: pass (google.com: domain of bbabenko@gmail.com designates 10.112.36.163 as permitted sender) client-ip=10.112.36.163
+ Authentication-Results: mr.google.com; spf=pass (google.com: domain of bbabenko@gmail.com designates 10.112.36.163 as permitted sender) smtp.mail=bbabenko@gmail.com; dkim=pass header.i=bbabenko@gmail.com
+ Received: from mr.google.com ([10.112.36.163])
+ by 10.112.36.163 with SMTP id r3mr3455011lbj.87.1342809136469 (num_hops = 1);
+ Fri, 20 Jul 2012 11:32:16 -0700 (PDT)
+ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=gmail.com; s=20120113;
+ h=mime-version:date:message-id:subject:from:to:content-type;
+ bh=zAyfVf0vZ7CADoyo71OCowiEefaRanjmlFaj9sIFrtY=;
+ b=WoLFJ1/l4SRUE5i2Y9BdhaNtsrOiGyX6dbLfJpQgSKowbnVujbqYeElQJ0Kcph4MaT
+ tJ90x+cr2vYrOnIj/gOq2Y1zM8+1NZWARF25PD+MQSD1B7HfhN5pPB//f6qg+0AonMfh
+ 7hiwn5ulZLFd8RQLoEyohHXy+0/HVqKf8Pmnbl6ilRbRu84tgjZac1zY6H+NXeJTJhla
+ QhiIYHpC5v7LOG6L44+V0CqOvK6+DtuxS9MVIFYG65RRwP3AMZmy4UwNN3rBOhQI48H/
+ HcuAxou8O4FVt5tKFFjaMJRYTSx5+TOTasDtQRuRLko7RL7F8dRzvCNAFHI/lGN1IGqK
+ baag==
+ MIME-Version: 1.0
+ Received: by 10.112.36.163 with SMTP id r3mr3455011lbj.87.1342809136462; Fri,
  20 Jul 2012 11:32:16 -0700 (PDT)
-Received: by 10.152.1.42 with HTTP; Fri, 20 Jul 2012 11:32:16 -0700 (PDT)
-Date: Fri, 20 Jul 2012 11:32:16 -0700
-Message-ID: <CAD6p0qPmWH02-1w1zYkvLXf=kZCzHQkBY9OhK_FEjhtux2ayMw@mail.gmail.com>
-Subject: miltrack code
-From: Boris Babenko <bbabenko@gmail.com>
-To: Vincent Rabaud <vincent.rabaud@gmail.com>
-Content-Type: multipart/alternative; boundary=485b390f79fe947ab904c5471d05
+ Received: by 10.152.1.42 with HTTP; Fri, 20 Jul 2012 11:32:16 -0700 (PDT)
+ Date: Fri, 20 Jul 2012 11:32:16 -0700
+ Message-ID: <CAD6p0qPmWH02-1w1zYkvLXf=kZCzHQkBY9OhK_FEjhtux2ayMw@mail.gmail.com>
+ Subject: miltrack code
+ From: Boris Babenko <bbabenko@gmail.com>
+ To: Vincent Rabaud <vincent.rabaud@gmail.com>
+ Content-Type: multipart/alternative; boundary=485b390f79fe947ab904c5471d05
 
---485b390f79fe947ab904c5471d05
-Content-Type: text/plain; charset=ISO-8859-1
+ --485b390f79fe947ab904c5471d05
+ Content-Type: text/plain; charset=ISO-8859-1
 
-Hi Vincent,
+ Hi Vincent,
 
-You (or anyone at WillowGarage) have my permission to change the license of
-my MilTrack code to BSD as you see fit.
+ You (or anyone at WillowGarage) have my permission to change the license of
+ my MilTrack code to BSD as you see fit.
 
-Thanks,
-- Boris
+ Thanks,
+ - Boris
 
---485b390f79fe947ab904c5471d05
-Content-Type: text/html; charset=ISO-8859-1
+ --485b390f79fe947ab904c5471d05
+ Content-Type: text/html; charset=ISO-8859-1
 
-Hi Vincent,<div><br></div><div>You (or anyone at WillowGarage) have my permission to change the license of my MilTrack code to BSD as you see fit.</div><div><br></div><div>Thanks,</div><div>- Boris</div>
+ Hi Vincent,<div><br></div><div>You (or anyone at WillowGarage) have my permission to change the license of my MilTrack code to BSD as you see fit.</div><div><br></div><div>Thanks,</div><div>- Boris</div>
 
---485b390f79fe947ab904c5471d05--
+ --485b390f79fe947ab904c5471d05--
 
  */

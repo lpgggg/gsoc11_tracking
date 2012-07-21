@@ -273,14 +273,6 @@ namespace cv
       ;
     };
 
-    //#if OS_type==2
-    //#define round(x) ( (x) >= 0 ? (x)+0.5 : (x)-0.5 )
-    //#define min(x,y) (x > y ? y : x)
-    //#define max(x,y) (x > y ? x : y)
-
-    //#define snprintf _snprintf
-    //#endif
-
     class EstimatedGaussDistribution
     {
     public:
@@ -359,7 +351,7 @@ namespace cv
 
     private:
 
-      char m_type[20];
+      int m_type;
       int m_numAreas;
       std::vector<int> m_weights;
       float m_initMean;
