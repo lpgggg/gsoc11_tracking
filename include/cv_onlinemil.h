@@ -571,6 +571,8 @@ namespace cv
       virtual
       ~ClfStrong()
       {
+       		  for (size_t i = 0; i < _ftrs.size(); i++)
+			             delete _ftrs.at(i);
       }
       int
       nFtrs()
@@ -684,6 +686,11 @@ namespace cv
             _numsamples(0),
             _myParams(0)
       {
+      }
+      ~ClfMilBoost()
+      {
+	          	for ( size_t i = 0; i < _weakclf.size(); i++ )
+			             delete _weakclf.at( i );
       }
       virtual void
       init(ClfStrongParams *params);
