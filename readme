@@ -1,0 +1,2 @@
+This is the preliminary version of MilTrack devepted by Vincent Rabaud and Austin Reiter. Now it has been made into OpenCV_contrib.
+MilTrack is proposed in "Robust Object Tracking with Online Multiple Instance Learning" Boris Babenko, Ming-Hsuan Yang, Serge Belongie IEEE TPAMI, August 2011.
